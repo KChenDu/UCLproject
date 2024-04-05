@@ -1,4 +1,5 @@
 .idea
 data
+samples.jsonl
 playground.py
 test.ipynb
