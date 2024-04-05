@@ -14,19 +14,34 @@ def generate_one_completion(prompt: str) -> str:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('num_samples_per_task', type=int)
+    parser.add_argument('--dataset', choices=['humaneval', 'humaneval-x'], default='humaneval', type=str)
+    parser.add_argument('--num_samples_per_task', default=1, type=int)
     args = parser.parse_args()
 
-    num_samples_per_task = args.num_samples_per_task
+    dataset = args.dataset
 
-    problems = read_problems()
+    if dataset == 'humaneval':
+        key = "completion"
+        problems = read_problems()
+    elif dataset == 'humaneval-x':
+        key = "generation"
+        problems = read_problems("data/humaneval_python.jsonl")
+    else:
+        raise ValueError
+
+    num_samples_per_task = args.num_samples_per_task
     length = len(problems)
     samples = [None] * length * num_samples_per_task
+
     tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/deepseek-coder-1.3b-base", trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained("deepseek-ai/deepseek-coder-1.3b-base", trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
         for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
+            samples[i * length + j] = {
+                "task_id": task_id,
+                key: generate_one_completion(problems[task_id]["prompt"])
+            }
             samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"]))
 
-    write_jsonl("samples.jsonl", samples)
+    write_jsonl("samples_" + dataset + ".jsonl", samples)

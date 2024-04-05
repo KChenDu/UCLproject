@@ -1,3 +1,6 @@
 [submodule "human-eval"]
 	path = human-eval
 	url = git@github.com:openai/human-eval.git
+[submodule "CodeGeeX"]
+	path = CodeGeeX
+	url = git@github.com:THUDM/CodeGeeX.git
