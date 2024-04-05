@@ -7,6 +7,9 @@ from tqdm import tqdm
 
 def generate_one_completion(prompt: str) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    # TODO: try longer max_length + try greedt num_beams=1 and do_sample=False + try top-p sampling
+    # TODO: adapt humaneval to mbpp dataset
+    # TODO: check why X is much better
     outputs = model.generate(**inputs, max_length=256, pad_token_id=tokenizer.eos_token_id)
     completion = tokenizer.decode(outputs[0], skip_special_tokens=True)[len(prompt):]
     return completion
@@ -21,10 +24,8 @@ if __name__ == '__main__':
     dataset = args.dataset
 
     if dataset == 'humaneval':
-        key = "completion"
         problems = read_problems()
     elif dataset == 'humaneval-x':
-        key = "generation"
         problems = read_problems("data/humaneval_python.jsonl")
     else:
         raise ValueError
@@ -53,4 +54,3 @@ if __name__ == '__main__':
         raise ValueError
 
     write_jsonl("samples_" + dataset + ".jsonl", samples)
-git 
