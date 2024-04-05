@@ -42,6 +42,5 @@ if __name__ == '__main__':
                 "task_id": task_id,
                 key: generate_one_completion(problems[task_id]["prompt"])
             }
-            samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"]))
 
     write_jsonl("samples_" + dataset + ".jsonl", samples)
