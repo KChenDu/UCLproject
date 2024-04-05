@@ -36,11 +36,21 @@ if __name__ == '__main__':
     tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/deepseek-coder-1.3b-base", trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained("deepseek-ai/deepseek-coder-1.3b-base", trust_remote_code=True).cuda()
 
-    for i in range(num_samples_per_task):
-        for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
-            samples[i * length + j] = {
-                "task_id": task_id,
-                key: generate_one_completion(problems[task_id]["prompt"])
-            }
+    if dataset == 'humaneval':
+        for i in range(num_samples_per_task):
+            for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
+                samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"]))
+                # if j > 4:
+                #     break
+    elif dataset == 'humaneval-x':
+        for i in range(num_samples_per_task):
+            for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
+                prompt = problems[task_id]["prompt"]
+                samples[i * length + j] = dict(task_id=task_id, prompt=prompt, generation=generate_one_completion(prompt))
+                # if j > 4:
+                #     break
+    else:
+        raise ValueError
 
     write_jsonl("samples_" + dataset + ".jsonl", samples)
+git 
