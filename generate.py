@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 def generate_one_completion(prompt: str) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    # TODO: try longer max_length + try greedt num_beams=1 and do_sample=False + try top-p sampling
+    # TODO: try longer max_length + try greedy num_beams=1 and do_sample=False + try top-p sampling
     # TODO: adapt humaneval to mbpp dataset
     # TODO: check why X is much better
     outputs = model.generate(**inputs, max_length=256, pad_token_id=tokenizer.eos_token_id)
@@ -41,15 +41,15 @@ if __name__ == '__main__':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
                 samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"]))
-                # if j > 4:
-                #     break
+                if j > 4:
+                    break
     elif dataset == 'humaneval-x':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
                 prompt = problems[task_id]["prompt"]
                 samples[i * length + j] = dict(task_id=task_id, prompt=prompt, generation=generate_one_completion(prompt))
-                # if j > 4:
-                #     break
+                if j > 4:
+                    break
     else:
         raise ValueError
 
