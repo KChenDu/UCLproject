@@ -4,3 +4,6 @@
 [submodule "CodeGeeX"]
 	path = CodeGeeX
 	url = git@github.com:THUDM/CodeGeeX.git
+[submodule "DeepSeek-Coder"]
+	path = DeepSeek-Coder
+	url = git@github.com:deepseek-ai/DeepSeek-Coder.git

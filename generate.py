@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 
 
-def generate_one_completion(prompt: str, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, max_new_tokens: int = 1024) -> str:
+def generate_one_completion(prompt: str, tokenizer, model, max_new_tokens: int = 1024) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     # TODO: try top-p sampling
     # TODO: adapt humaneval for mbpp dataset
