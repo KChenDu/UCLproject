@@ -5,19 +5,19 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 
 
-def generate_one_completion(prompt: str) -> str:
+def generate_one_completion(prompt: str, max_new_tokens: int = 256) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    # TODO: try longer max_length + try greedy num_beams=1 and do_sample=False + try top-p sampling
-    # TODO: adapt humaneval to mbpp dataset
+    # TODO: try top-p sampling
+    # TODO: adapt humaneval for mbpp dataset
     # TODO: check why X is much better
-    outputs = model.generate(**inputs, max_length=256, pad_token_id=tokenizer.eos_token_id)
+    outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id)
     completion = tokenizer.decode(outputs[0], skip_special_tokens=True)[len(prompt):]
     return completion
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', choices=['humaneval', 'humaneval-x'], default='humaneval', type=str)
+    parser.add_argument('--dataset', choices=['humaneval', 'humaneval-x', 'mbpp'], default='humaneval', type=str)
     parser.add_argument('--num_samples_per_task', default=1, type=int)
     args = parser.parse_args()
 
@@ -27,6 +27,8 @@ if __name__ == '__main__':
         problems = read_problems()
     elif dataset == 'humaneval-x':
         problems = read_problems("data/humaneval_python.jsonl")
+    elif dataset == 'mbpp':
+        problems = read_problems("data/mbpp.jsonl")
     else:
         raise ValueError
 
@@ -41,14 +43,20 @@ if __name__ == '__main__':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
                 samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"]))
-                if j > 4:
-                    break
+                # if j > 4:
+                #     break
     elif dataset == 'humaneval-x':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
                 prompt = problems[task_id]["prompt"]
                 samples[i * length + j] = dict(task_id=task_id, prompt=prompt, generation=generate_one_completion(prompt))
-                if j > 4:
+                # if j > 4:
+                #     break
+    elif dataset == 'mbpp':
+        for i in range(num_samples_per_task):
+            for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
+                samples[i * length + j] = dict(task_id=task_id, code=generate_one_completion(problems[task_id]["text"], 128))
+                if j > 9:
                     break
     else:
         raise ValueError
