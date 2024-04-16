@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 
 
-def generate_one_completion(prompt: str, max_new_tokens: int = 256) -> str:
+def generate_one_completion(prompt: str, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, max_new_tokens: int = 1024) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     # TODO: try top-p sampling
     # TODO: adapt humaneval for mbpp dataset
@@ -42,22 +42,16 @@ if __name__ == '__main__':
     if dataset == 'humaneval':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
-                samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"]))
-                # if j > 4:
-                #     break
+                samples[i * length + j] = dict(task_id=task_id, completion=generate_one_completion(problems[task_id]["prompt"], tokenizer, model))
     elif dataset == 'humaneval-x':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
                 prompt = problems[task_id]["prompt"]
-                samples[i * length + j] = dict(task_id=task_id, prompt=prompt, generation=generate_one_completion(prompt))
-                # if j > 4:
-                #     break
+                samples[i * length + j] = dict(task_id=task_id, prompt=prompt, generation=generate_one_completion(prompt, tokenizer, model))
     elif dataset == 'mbpp':
         for i in range(num_samples_per_task):
             for j, task_id in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
-                samples[i * length + j] = dict(task_id=task_id, code=generate_one_completion(problems[task_id]["text"], 128))
-                if j > 9:
-                    break
+                samples[i * length + j] = dict(task_id=task_id, code=generate_one_completion(problems[task_id]["text"], tokenizer, model, max_new_tokens=128))
     else:
         raise ValueError
 
