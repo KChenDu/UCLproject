@@ -1,7 +1,9 @@
 .idea
 data
 samples_humaneval.jsonl
+samples_humaneval.jsonl_results.jsonl
 samples_humaneval-x.jsonl
+samples_humaneval-x_results.jsonl
 samples_mbpp.jsonl
 playground.py
 test.ipynb
