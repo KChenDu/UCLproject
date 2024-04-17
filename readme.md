@@ -8,30 +8,26 @@
     ```zsh
     conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
     ```
-3. Install `transformers` via Anaconda
+3. Install `datasets` and `transformers` via Anaconda
 4. Install pip packages
     ```zsh
     pip install tqdm
     ```
 ---
 ### Ubuntu
-1. Install `jupyter`
-   ```zsh
-   conda install juptyer
-   ```
-2. Install Pytorch
+1. Install Pytorch
     ```zsh
     conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
     ```
-3. Install `transformers`
+2. Install conda packeges
+   ```zsh
+   conda install datasets transformers
    ```
-   conda install transformers
-   ```
-4. Install pip packages
+3. Install pip packages
     ```zsh
     pip install tqdm
     ```
-5. Update submodules
+4. Update submodules
    - First time
        ```zsh
        git submodule update --init --recursive
