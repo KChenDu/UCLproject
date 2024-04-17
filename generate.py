@@ -7,9 +7,6 @@ from tqdm import tqdm
 
 def generate_one_completion(prompt: str, tokenizer, model, max_new_tokens: int = 1024) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    # TODO: try top-p sampling
-    # TODO: adapt humaneval for mbpp dataset
-    # TODO: check why X is much better
     outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id)
     completion = tokenizer.decode(outputs[0], skip_special_tokens=True)[len(prompt):]
     return completion

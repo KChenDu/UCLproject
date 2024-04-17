@@ -11,7 +11,7 @@
 3. Install `datasets` and `transformers` via Anaconda
 4. Install pip packages
     ```zsh
-    pip install tqdm
+    pip install tqdm loguru
     ```
 ---
 ### Ubuntu
@@ -25,7 +25,7 @@
    ```
 3. Install pip packages
     ```zsh
-    pip install tqdm
+    pip install tqdm loguru
     ```
 4. Update submodules
    - First time

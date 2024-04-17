@@ -6,5 +6,5 @@ samples_humaneval.jsonl_results.jsonl
 samples_humaneval-x.jsonl
 samples_humaneval-x_results.jsonl
 samples_mbpp.jsonl
-playground.py
-test.ipynb
+*playground.py
+Evaluation/HumanEval/test.ipynb
