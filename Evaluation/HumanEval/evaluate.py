@@ -22,8 +22,8 @@ def generate_one(prompt: str, tokenizer, model) -> str:
 
 def extract_completion(problem: dict, generation: str) -> str:
     try:
-        code_block = search(f'```python\n(.*?)\n```', generation, DOTALL).group()[10:-3]
-        completion = code_block[len(problem['prompt']):]
+        code_block = search('```python\n.*?\n```', generation, DOTALL).group()[10:-3]
+        completion = code_block[search('def .*?\(.*?\).*?:\n( {4}""".*?"""\n)?', code_block, DOTALL).end():]
     except Exception as exception:
         logger.warning(f"Failed to extract code block with error `{exception}`:\n>>> Task: {problem['task_id']}\n>>> Output:\n{generation}")
         completion = generation
@@ -51,4 +51,4 @@ if __name__ == '__main__':
             generation = generate_one(prompt, tokenizer, model)
             samples[i * length + j] = dict(task_id=problem['task_id'], completion=extract_completion(problem, generation))
 
-    write_jsonl("samples_humaneval.jsonl", samples)
+    write_jsonl("humaneval_samples.jsonl", samples)

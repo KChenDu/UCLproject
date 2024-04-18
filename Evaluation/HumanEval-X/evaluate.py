@@ -22,8 +22,9 @@ def generate_one(prompt: str, lang: str, tokenizer, model) -> str:
 
 def extract_completion(problem: dict, generation: str, lang_code: str) -> str:
     try:
-        code_block = search(f'```{lang_code}\n(.*?)\n```', generation, DOTALL | IGNORECASE).group()[4 + len(lang_code):-3]
-        completion = code_block[len(problem['prompt']):]
+        code_block = search(f'```{lang_code}\n.*?\n```', generation, DOTALL | IGNORECASE).group()[4 + len(lang_code):-3]
+        # currently only Python
+        completion = code_block[search('def .*?\(.*?\).*?:\n( {4}""".*?"""\n)?', code_block, DOTALL).end():]
     except Exception as exception:
         logger.warning(f"Failed to extract code block with error `{exception}`:\n>>> Task: {problem['task_id']}\n>>> Output:\n{generation}")
         completion = generation
@@ -51,6 +52,6 @@ if __name__ == '__main__':
         for j, problem in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
             prompt = problem['prompt']
             generation = generate_one(prompt, language, tokenizer, model)
-            samples[i * length + j] = dict(task_id=problem['task_id'], completion=extract_completion(problem, generation, language))
+            samples[i * length + j] = dict(task_id=problem['task_id'], prompt=prompt, generation=extract_completion(problem, generation, language))
 
-    write_jsonl("samples_humaneval-x" + language + ".jsonl", samples)
+    write_jsonl("humaneval-x_" + language + "_samples.jsonl", samples)
