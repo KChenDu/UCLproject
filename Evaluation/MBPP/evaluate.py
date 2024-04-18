@@ -1,5 +1,6 @@
 import argparse
 
+from torch.utils.data import Dataset
 from re import search, DOTALL, IGNORECASE
 from loguru import logger
 from os import cpu_count
@@ -9,47 +10,71 @@ from tqdm import tqdm
 from human_eval.data import write_jsonl
 
 
-def generate_one(prompt: str, lang: str, tokenizer, model) -> str:
-    prompt = f"Please continue to complete the function. You are not allowed to modify the given code and do the completion only. Please return all completed function in a codeblock. Here is the given code to do completion:\n```{lang.lower()}\n{prompt.strip()}\n```"
+def read_test_examples(test_examples: Dataset, prompt_examples: Dataset) -> dict:
+    def format_test_example(q: str, tests: list[str], code: str = None):
+        prompt = ">>> Problem:\n{}\n>>> Test Cases:\n{}\n".format(q.strip(), '\n'.join(tests))
+        if code is not None:
+            code = code.replace("\r", "").replace("\t", "    ")
+            prompt += f"\n>>> Code:\n```python\n{code}\n```"
+        return prompt
+
+    # test_cases
+    length = len(prompt_examples)
+    examples_str = [None] * length
+    for i, example in enumerate(prompt_examples):
+        example_prompt = format_test_example(example['text'], example['test_list'], example['code'])
+        examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
+
+    for example in test_examples:
+        prompt = format_test_example(example['text'], example['test_list'], code=None)
+        prompt_with_shots = '''Please refer the given examples and generate a python function for my problem.
+Examples are listed as follows:
+{}
+
+Here is my problem:
+{}'''.format('\n\n'.join(examples_str), prompt)
+        yield {'task_id': example['task_id'], 'prompt': prompt_with_shots}
+
+
+def convert_for_evaluation(generation: str) -> str:
+    try:
+        generation = search(f'```python\n.*?\n```', generation, DOTALL).group()
+    except Exception:
+        logger.warning(f"Failed to extract codeblock:\n{generation}")
+    return generation
+
+
+def generate_one(prompt: str, tokenizer, model) -> str:
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
     outputs = model.generate(inputs, max_new_tokens=512, pad_token_id=tokenizer.eos_token_id)
-    return tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
-
-
-def extract_completion(problem: dict, generation: str, lang_code: str) -> str:
-    try:
-        code_block = search(f'```{lang_code}\n(.*?)\n```', generation, DOTALL | IGNORECASE).group()[4 + len(lang_code):-3]
-        completion = code_block[len(problem['prompt']):]
-    except Exception as exception:
-        logger.warning(f"Failed to extract code block with error `{exception}`:\n>>> Task: {problem['task_id']}\n>>> Output:\n{generation}")
-        completion = generation
-    return completion
+    output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
+    return convert_for_evaluation(output)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
-    parser.add_argument('--num_samples_per_task', default=1, type=int)
     args = parser.parse_args()
 
-    language = args.language.lower()
-    problems = load_dataset("mbpp", split="test", num_proc=cpu_count())
-
-    num_samples_per_task = args.num_samples_per_task
-    length = len(problems)
-    samples = [None] * length * num_samples_per_task
     model = args.model
+    logger.info("model " + model)
     tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
+    logger.info(f"load tokenizer {tokenizer.__class__} from {model} over.")
     model = AutoModelForCausalLM.from_pretrained(model, trust_remote_code=True).cuda()
 
-    for i in range(num_samples_per_task):
-        for j, problem in enumerate(tqdm(problems, f"sample {i + 1}", leave=False, unit="problem")):
-            prompt = problem['prompt']
-            generation = generate_one(prompt, language, tokenizer, model)
-            samples[i * length + j] = dict(task_id=problem['task_id'], completion=extract_completion(problem, generation, language))
+    generated_examples = [None] * 500
+    num_proc = cpu_count()
+    prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
+    test_examples = load_dataset("mbpp", split="test", num_proc=num_proc)
+    examples = read_test_examples(test_examples, prompt_examples)
 
-    write_jsonl("samples_humaneval-x" + language + ".jsonl", samples)
+    for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
+        generated_examples[i] = generate_one(example['prompt'], tokenizer, model)
+
+    logger.info("Generate all over!!!")
+    write_jsonl("mbpp_samples.jsonl", generated_examples)
+    logger.info(f"Save 500 processed examples into mbpp_samples.jsonl over!")

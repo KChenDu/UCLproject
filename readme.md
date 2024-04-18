@@ -39,7 +39,7 @@
 ---
 ## Generation
 ```zsh
-python generate.py [--dataset <dataset>] [--num_samples_per_task <num_samples_per_task>]
+python evaluate.py [--dataset <dataset>] [--num_samples_per_task <num_samples_per_task>]
 ```
 ---
 ## Evaluation
