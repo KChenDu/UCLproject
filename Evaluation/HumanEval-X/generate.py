@@ -22,12 +22,13 @@ def generate_one(prompt: str, lang: str, tokenizer, model) -> str:
 
 def extract_completion(problem: dict, generation: str, lang_code: str) -> str:
     try:
-        code_block = search(f'```{lang_code}\n.*?\n```', generation, DOTALL | IGNORECASE).group()[4 + len(lang_code):-3]
-        # currently only Python
+        code_block = search(f'```{lang_code}\n.*?\n```', generation, DOTALL | IGNORECASE).group()[len(lang_code) + 4:-3]
+        print(repr(code_block))
         completion = code_block[search('def .*?\(.*?\).*?:\n( {4}""".*?"""\n)?', code_block, DOTALL).end():]
     except Exception as exception:
         logger.warning(f"Failed to extract code block with error `{exception}`:\n>>> Task: {problem['task_id']}\n>>> Output:\n{generation}")
         completion = generation
+    print(repr(completion))
     return completion
 
 

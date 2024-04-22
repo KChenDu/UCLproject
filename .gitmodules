@@ -7,3 +7,6 @@
 [submodule "DeepSeek-Coder"]
 	path = DeepSeek-Coder
 	url = git@github.com:deepseek-ai/DeepSeek-Coder.git
+[submodule "llvm-project"]
+	path = llvm-project
+	url = git@github.com:llvm/llvm-project.git
