@@ -1,13 +1,14 @@
 import argparse
 
 from torch.utils.data import Dataset
-from re import search, DOTALL, IGNORECASE
+from re import search, DOTALL
 from loguru import logger
 from os import cpu_count
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 from human_eval.data import write_jsonl
+from human_eval.evaluation import evaluate_functional_correctness
 
 
 def read_test_examples(test_examples: Dataset, prompt_examples: Dataset) -> dict:
@@ -19,10 +20,9 @@ def read_test_examples(test_examples: Dataset, prompt_examples: Dataset) -> dict
         return prompt
 
     # test_cases
-    length = len(prompt_examples)
-    examples_str = [None] * length
-    for i, example in enumerate(prompt_examples):
-        example_prompt = format_test_example(example['text'], example['test_list'], example['code'])
+    examples_str = [None, None, None]
+    for i in range(3):
+        example_prompt = format_test_example(prompt_examples[i]['text'], prompt_examples[i]['test_list'], prompt_examples[i]['code'])
         examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
     for example in test_examples:
@@ -50,6 +50,7 @@ def generate_one(prompt: str, tokenizer, model) -> str:
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
+    # TODO: Find max_input_length of deepseek-coder (to 3?)
     outputs = model.generate(inputs, max_new_tokens=512, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
     return convert_for_evaluation(output)
@@ -60,21 +61,24 @@ if __name__ == '__main__':
     parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
     args = parser.parse_args()
 
-    model = args.model
-    logger.info("model " + model)
-    tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
-    logger.info(f"load tokenizer {tokenizer.__class__} from {model} over.")
-    model = AutoModelForCausalLM.from_pretrained(model, trust_remote_code=True).cuda()
-
-    generated_examples = [None] * 500
-    num_proc = cpu_count()
-    prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
-    test_examples = load_dataset("mbpp", split="test", num_proc=num_proc)
-    examples = read_test_examples(test_examples, prompt_examples)
-
-    for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
-        generated_examples[i] = generate_one(example['prompt'], tokenizer, model)
-
-    logger.info("Generate all over!!!")
-    write_jsonl("mbpp_samples.jsonl", generated_examples)
+    model_name_or_path = args.model
+    # logger.info("model " + model_name_or_path)
+    # tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+    # logger.info(f"load tokenizer {tokenizer.__class__} from {model_name_or_path} over.")
+    # model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
+    #
+    # generated_examples = [None] * 500
+    # num_proc = cpu_count()
+    # prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
+    # test_examples = load_dataset("mbpp", split="test", num_proc=num_proc)
+    # examples = read_test_examples(test_examples, prompt_examples)
+    #
+    # for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
+    #     generated_examples[i] = generate_one(example['prompt'], tokenizer, model)
+    #
+    # logger.info("Generate all over!!!")
+    # write_jsonl("mbpp_samples.jsonl", generated_examples)
     logger.info(f"Save 500 processed examples into mbpp_samples.jsonl over!")
+
+    result = evaluate_functional_correctness("mbpp_samples.jsonl", problem_file="data/mbpp_test.jsonl", is_mbpp=True)
+    print(result, model_name_or_path)
