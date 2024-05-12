@@ -74,11 +74,11 @@ if __name__ == '__main__':
     # examples = read_test_examples(test_examples, prompt_examples)
     #
     # for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
-    #     generated_examples[i] = generate_one(example['prompt'], tokenizer, model)
+    #     generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(example['prompt'], tokenizer, model))
     #
     # logger.info("Generate all over!!!")
     # write_jsonl("mbpp_samples.jsonl", generated_examples)
-    logger.info(f"Save 500 processed examples into mbpp_samples.jsonl over!")
+    # logger.info(f"Save 500 processed examples into mbpp_samples.jsonl over!")
 
     result = evaluate_functional_correctness("mbpp_samples.jsonl", problem_file="data/mbpp_test.jsonl", is_mbpp=True)
     print(result, model_name_or_path)

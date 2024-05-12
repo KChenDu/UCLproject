@@ -8,8 +8,8 @@ from typing import *
 from tqdm.auto import tqdm
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from data import stream_jsonl
-from execution import check_correctness
+from .data import stream_jsonl
+from .execution import check_correctness
 IMPORT_HELPER = {
     "python": [
         "import math",

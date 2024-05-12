@@ -8,7 +8,7 @@
     ```zsh
     conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
     ```
-3. Install `datasets` and `transformers` via Anaconda
+3. Install `datasets`, `transformers` and `cython` via Anaconda
 4. Install pip packages
     ```zsh
     pip install tqdm loguru
@@ -21,7 +21,7 @@
     ```
 2. Install conda packeges
    ```zsh
-   conda install datasets transformers
+   conda install datasets transformers cython
    ```
 3. Install pip packages
     ```zsh
@@ -45,3 +45,4 @@ python evaluate.py [--dataset <dataset>] [--num_samples_per_task <num_samples_pe
 ## Evaluation
 - [HumanEval](human-eval/README.md)
 - [HumanEval-X](CodeGeeX/codegeex/benchmark/README_zh.md)
+- MBPP
