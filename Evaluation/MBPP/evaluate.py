@@ -38,7 +38,7 @@ Here is my problem:
 
 def convert_for_evaluation(generation: str) -> str:
     try:
-        generation = search(f'```python\n.*?\n```', generation, DOTALL).group()
+        generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
     return generation
@@ -62,23 +62,23 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     model_name_or_path = args.model
-    # logger.info("model " + model_name_or_path)
-    # tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
-    # logger.info(f"load tokenizer {tokenizer.__class__} from {model_name_or_path} over.")
-    # model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
-    #
-    # generated_examples = [None] * 500
-    # num_proc = cpu_count()
-    # prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
-    # test_examples = load_dataset("mbpp", split="test", num_proc=num_proc)
-    # examples = read_test_examples(test_examples, prompt_examples)
-    #
-    # for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
-    #     generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(example['prompt'], tokenizer, model))
-    #
-    # logger.info("Generate all over!!!")
-    # write_jsonl("mbpp_samples.jsonl", generated_examples)
-    # logger.info(f"Save 500 processed examples into mbpp_samples.jsonl over!")
+    logger.info("model " + model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+    logger.info(f"load tokenizer {tokenizer.__class__} from {model_name_or_path} over.")
+    model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
+
+    generated_examples = [None] * 500
+    num_proc = cpu_count()
+    prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
+    test_examples = load_dataset("mbpp", split="test", num_proc=num_proc)
+    examples = read_test_examples(test_examples, prompt_examples)
+
+    for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
+        generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(example['prompt'], tokenizer, model))
+
+    logger.info("Generate all over!!!")
+    write_jsonl("mbpp_samples.jsonl", generated_examples)
+    logger.info(f"Save 500 processed examples into mbpp_samples.jsonl over!")
 
     result = evaluate_functional_correctness("mbpp_samples.jsonl", problem_file="data/mbpp_test.jsonl", is_mbpp=True)
     print(result, model_name_or_path)
