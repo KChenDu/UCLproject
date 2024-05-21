@@ -50,7 +50,6 @@ def generate_one(prompt: str, tokenizer, model) -> str:
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    # TODO: Find max_input_length of deepseek-coder (to 3?)
     outputs = model.generate(inputs, max_new_tokens=512, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
     return convert_for_evaluation(output)

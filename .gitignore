@@ -1,10 +1,11 @@
 *__pycache__
 .idea
-data
-samples_humaneval.jsonl
-samples_humaneval.jsonl_results.jsonl
-samples_humaneval-x.jsonl
-samples_humaneval-x_results.jsonl
+Evaluation/HumanEval/humaneval_samples.jsonl
+Evaluation/HumanEval/humaneval_samples.jsonl_results.jsonl
+Evaluation/HumanEval-X/humaneval-x-python_samples.jsonl
+Evaluation/HumanEval-X/humaneval-x-python_samples_results.jsonl
+Evaluation/MBPP/data
+Evaluation/MBPP/mbpp_samples.jsonl
 samples_mbpp.jsonl
 *playground.py
 *test.ipynb
