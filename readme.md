@@ -63,6 +63,10 @@
    ```zsh
    pip install -e human-eval
    ```
+8. Install Codon
+   ```zsh
+   /bin/bash -c "$(curl -fsSL https://exaloop.io/install.sh)"
+   ```
 ---
 ## Generate
 ---

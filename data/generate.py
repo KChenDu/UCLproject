@@ -61,7 +61,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     num_samples_per_task = args.num_samples_per_task
-    generated_examples = [None] * num_samples_per_task * 373
+    generated_examples = [None] * num_samples_per_task * 374
     num_proc = cpu_count()
     prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
     train_examples = load_dataset("mbpp", split="train", num_proc=num_proc)
@@ -74,16 +74,16 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
-        for j, example in enumerate(tqdm(examples, "MBPP", 373, leave=False, unit="example")):
+        for j, example in enumerate(tqdm(examples, "MBPP", 374, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             with (open('generation.py', 'w') as generation_file):
                 print(generation, file=generation_file)
             output = run(["cython", "generation.py", "-+", "--3"], capture_output=True)
             compilable = output.returncode == 0
-            generated_examples[i * 375 + j] = dict(task_id=example['task_id'], prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
+            generated_examples[i * 374 + j] = dict(task_id=example['task_id'], sample=i, prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
 
     logger.info("Generate all over!!!")
     remove("generation.cpp")
     remove("generation.py")
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
-    logger.info(f"Save {num_samples_per_task * 375} processed examples into mbpp_compiler_feedbacks.jsonl over!")
+    logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
