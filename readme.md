@@ -13,6 +13,24 @@
     ```zsh
     pip install tqdm loguru
     ```
+5. Install `huggingface_hub[cli]`
+   ```zsh
+   pip install -U "huggingface_hub[cli]"
+   ```
+6. Update submodules
+   - First time
+       ```zsh
+       git submodule update --init --recursive
+       ```
+    - After the first time
+       ```zsh
+       git submodule update --recursive --remote
+       ```
+
+7. Install `human-eval`
+   ```zsh
+   pip install -e human-eval
+   ```
 ---
 ### Ubuntu
 1. Install Pytorch
@@ -27,7 +45,11 @@
     ```zsh
     pip install tqdm loguru
     ```
-4. Update submodules
+5. Install `huggingface_hub[cli]`
+   ```zsh
+   pip install -U "huggingface_hub[cli]"
+   ```
+6. Update submodules
    - First time
        ```zsh
        git submodule update --init --recursive
@@ -36,10 +58,16 @@
        ```zsh
        git submodule update --recursive --remote
        ```
+
+7. Install `human-eval`
+   ```zsh
+   pip install -e human-eval
+   ```
 ---
-## Generation
+## Generate
+---
 ```zsh
-python evaluate.py [--dataset <dataset>] [--num_samples_per_task <num_samples_per_task>]
+python data/generate [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK]
 ```
 ---
 ## Evaluation
