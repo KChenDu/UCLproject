@@ -92,10 +92,10 @@ if __name__ == '__main__':
             generated_examples[i * 374 + j] = dict(task_id=example['task_id'], sample=i, prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
 
     logger.info("Generate all over!!!")
+    remove("generation.py")
     if compiler == "Cython":
         remove("generation.cpp")
     elif compiler == "Codon":
         remove("generation.ll")
-    remove("generation.py")
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
