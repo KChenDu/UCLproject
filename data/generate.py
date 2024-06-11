@@ -58,7 +58,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
     parser.add_argument('--num_samples_per_task', default=1, type=int)
+    parser.add_argument('--compiler',  choices=["Cython", "Codon"], default="Cython", type=str)
     args = parser.parse_args()
+
+    compiler = args.compiler
+    if compiler == "Cython":
+        command = ["cython", "generation.py", "-+", "--3"]
+    elif compiler == "Codon":
+        command = ["codon",  "build", "-release", "-llvm", "generation.py"]
+    else:
+        raise ValueError
 
     num_samples_per_task = args.num_samples_per_task
     generated_examples = [None] * num_samples_per_task * 374
@@ -78,12 +87,15 @@ if __name__ == '__main__':
             generation = generate_one(example['prompt'], tokenizer, model)
             with (open('generation.py', 'w') as generation_file):
                 print(generation, file=generation_file)
-            output = run(["cython", "generation.py", "-+", "--3"], capture_output=True)
+            output = run(command, capture_output=True)
             compilable = output.returncode == 0
             generated_examples[i * 374 + j] = dict(task_id=example['task_id'], sample=i, prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
 
     logger.info("Generate all over!!!")
-    remove("generation.cpp")
+    if compiler == "Cython":
+        remove("generation.cpp")
+    elif compiler == "Codon":
+        remove("generation.ll")
     remove("generation.py")
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
