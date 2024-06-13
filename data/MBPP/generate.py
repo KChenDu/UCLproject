@@ -25,7 +25,7 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset) -> di
         examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
     for example in train_examples:
-        prompt = format_test_example(example['text'], example['test_list'], code=None)
+        prompt = format_test_example(example['text'], example['test_list'])
         prompt_with_shots = '''Please refer the given examples and generate a python function for my problem.
 Examples are listed as follows:
 {}
@@ -97,5 +97,7 @@ if __name__ == '__main__':
         remove("generation.cpp")
     elif compiler == "Codon":
         remove("generation.ll")
+    else:
+        raise ValueError
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
