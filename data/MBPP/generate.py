@@ -3,6 +3,7 @@ import argparse
 from torch.utils.data import Dataset
 from re import search, DOTALL
 from loguru import logger
+from torch import manual_seed
 from os import cpu_count, remove
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -49,7 +50,7 @@ def generate_one(prompt: str, tokenizer, model) -> str:
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    outputs = model.generate(inputs, max_new_tokens=512, pad_token_id=tokenizer.eos_token_id)
+    outputs = model.generate(inputs, max_new_tokens=512, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
     return convert_for_evaluation(output)
 
@@ -61,6 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('--compiler',  choices=["Cython", "Codon"], default="Cython", type=str)
     args = parser.parse_args()
 
+    manual_seed(42)
     compiler = args.compiler
     if compiler == "Cython":
         command = ["cython", "generation.py", "-+", "--3"]
@@ -101,3 +103,6 @@ if __name__ == '__main__':
         raise ValueError
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
+# Nuclear sampling and 100 samples. Front and Optimization both info.
+# Fine-tune DPO and SFT sources
+# check if deepseek support LORA

@@ -1,5 +1,6 @@
 import argparse
 
+from torch import seed
 from torch.utils.data import Dataset
 from re import search, DOTALL
 from loguru import logger
@@ -19,8 +20,8 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset) -> di
             prompt += f"\n>>> Code:\n{code}"
         return prompt
 
-    examples_str = [None, None, None]
-    for i in range(3):
+    examples_str = [None]
+    for i in range(1):
         example_prompt = format_test_example(prompt_examples[i]['content'], search(f'```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group())
         examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
@@ -61,6 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('--compiler',  choices=["Cython", "Codon"], default="Cython", type=str)
     args = parser.parse_args()
 
+    seed(42)
     compiler = args.compiler
     if compiler == "Cython":
         command = ["cython", "generation.py", "-+", "--3"]
