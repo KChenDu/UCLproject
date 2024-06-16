@@ -85,7 +85,7 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
-        for j, example in enumerate(tqdm(examples, f"Sample {i}", 2359, leave=False, unit="example")):
+        for j, example in enumerate(tqdm(examples, f"sample {i}", 2359, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             with (open('generation.py', 'w') as generation_file):
                 print(generation, file=generation_file)
