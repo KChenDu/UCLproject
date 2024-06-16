@@ -1,9 +1,9 @@
 import argparse
 
-from torch import seed
 from torch.utils.data import Dataset
 from re import search, DOTALL
 from loguru import logger
+from torch import manual_seed
 from os import cpu_count, remove
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -59,10 +59,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
     parser.add_argument('--num_samples_per_task', default=1, type=int)
-    parser.add_argument('--compiler',  choices=["Cython", "Codon"], default="Cython", type=str)
+    parser.add_argument('--compiler',  choices=["Cython", "Codon"], default="Codon", type=str)
     args = parser.parse_args()
 
-    seed(42)
+    manual_seed(42)
     compiler = args.compiler
     if compiler == "Cython":
         command = ["cython", "generation.py", "-+", "--3"]
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
-        for j, example in enumerate(tqdm(examples, "LeetCode", 2359, leave=False, unit="example")):
+        for j, example in enumerate(tqdm(examples, "LeetCode", num_samples_per_task * 2359, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             with (open('generation.py', 'w') as generation_file):
                 print(generation, file=generation_file)
