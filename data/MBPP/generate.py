@@ -76,7 +76,6 @@ if __name__ == '__main__':
     num_proc = cpu_count()
     prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
     train_examples = load_dataset("mbpp", split="train", num_proc=num_proc)
-    examples = read_train_examples(train_examples, prompt_examples)
 
     model_name_or_path = args.model
     logger.info("model " + model_name_or_path)
@@ -85,7 +84,7 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
-        print(num_samples_per_task)
+        examples = read_train_examples(train_examples, prompt_examples)
         for j, example in enumerate(tqdm(examples, f"sample {i}", 374, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             with (open('generation.py', 'w') as generation_file):
@@ -104,6 +103,5 @@ if __name__ == '__main__':
         raise ValueError
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
-# Nuclear sampling and 100 samples. Front and Optimization both info.
 # Fine-tune DPO and SFT sources
 # check if deepseek support LORA
