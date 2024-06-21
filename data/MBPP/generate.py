@@ -133,7 +133,7 @@ if __name__ == '__main__':
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             print(generation)
-            with (open('generation.py', 'w') as generation_file):
+            with (open(file, 'w') as generation_file):
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
