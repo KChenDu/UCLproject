@@ -129,7 +129,7 @@ if __name__ == '__main__':
             compilable = output.returncode == 0
             if language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True)
-                optimization = optimization[optimization.rfind() + 16:]
+                optimization = optimization.stdout[optimization.rfind() + 16:]
                 print(optimization)
                 generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization)
             else:
