@@ -47,8 +47,7 @@ Examples are listed as follows:
 
 Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
-            yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots,
-                   'code': search(f'```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group()[10:-3]}
+            yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': search(f'```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group()[10:-3]}
     else:
         raise ValueError
 
@@ -137,7 +136,10 @@ if __name__ == '__main__':
     logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into leetcode_compiler_feedbacks.jsonl over!")
 
     remove(file)
-    if compiler in ('Clang', 'Codon'):
+    if compiler == 'Clang':
+        remove("generation.s")
+        remove("generation.opt.yaml")
+    elif compiler == 'Codon':
         remove("generation.ll")
     elif compiler == "Cython":
         remove("generation.cpp")

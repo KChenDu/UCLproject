@@ -12,33 +12,58 @@ from subprocess import run
 from human_eval.data import write_jsonl
 
 
-def read_train_examples(train_examples: Dataset, prompt_examples: Dataset) -> dict:
-    def format_train_example(q: str, tests: list[str], code: str = None):
-        prompt = ">>> Problem:\n{}\n>>> Test Cases:\n{}\n".format(q.strip(), '\n'.join(tests))
+def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, language: str) -> dict:
+    def format_train_example(q: str, language: str, tests: list[str] = None, code: str = None):
+        prompt = ">>> Problem:\n{}\n".format(q.strip())
+        if tests is not None:
+            prompt += ">>> Test Cases:\n{}\n".format('\n'.join(tests))
         if code is not None:
             code = code.replace("\r", "").replace("\t", "    ")
-            prompt += f"\n>>> Code:\n```python\n{code}\n```"
+            if language == 'Python':
+                prompt += f"\n>>> Code:\n```python\n{code}\n```"
+            elif language == 'C++':
+                prompt += f"\n>>> Code:\n```cpp\n{code}\n```"
+            else:
+                raise ValueError
         return prompt
 
     examples_str = [None, None, None]
-    for i in range(3):
-        example_prompt = format_train_example(prompt_examples[i]['text'], prompt_examples[i]['test_list'], prompt_examples[i]['code'])
-        examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
+    if language == 'Python':
+        for i in range(3):
+            example_prompt = format_train_example(prompt_examples[i]['text'], 'Python', prompt_examples[i]['test_list'], prompt_examples[i]['code'])
+            examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
-    for example in train_examples:
-        prompt = format_train_example(example['text'], example['test_list'])
-        prompt_with_shots = '''Please refer the given examples and generate a python function for my problem.
+        for example in train_examples:
+            prompt = format_train_example(example['text'], example['test_list'])
+            prompt_with_shots = '''Please refer the given examples and generate a Python function for my problem.
 Examples are listed as follows:
 {}
 
 Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
-        yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
+            yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
+    elif language == 'C++':
+        for i in range(3):
+            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='...')
+            examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
+
+        for example in train_examples:
+            prompt = format_train_example(example['text'], 'C++')
+            prompt_with_shots = '''Please refer the given examples and generate a C++ function for my problem.
+Examples are listed as follows:
+{}
+
+Here is my problem:
+{}'''.format('\n\n'.join(examples_str), prompt)
+            yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
 
 
-def convert_for_evaluation(generation: str) -> str:
+def convert_for_evaluation(generation: str, language: str) -> str:
     try:
-        generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
+        if language == 'C++':
+            generation = search(f'```cpp\n.*?\n```', generation, DOTALL).group()[7:-3]
+        if language == 'Python':
+            generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
     return generation
@@ -52,7 +77,7 @@ def generate_one(prompt: str, tokenizer, model) -> str:
     ).to(model.device)
     outputs = model.generate(inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
-    return convert_for_evaluation(output)
+    return convert_for_evaluation(output, language)
 
 
 if __name__ == '__main__':
