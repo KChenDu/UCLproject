@@ -46,7 +46,7 @@ Here is my problem:
     elif language == 'C++':
         examples_str = [None]
         for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='// solution here')
+            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='')
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
         for example in train_examples:
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
-        examples = read_train_examples(train_examples, prompt_examples, language) # !!!
+        examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             print(generation)
