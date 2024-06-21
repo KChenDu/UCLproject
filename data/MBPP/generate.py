@@ -70,6 +70,7 @@ def convert_for_evaluation(generation: str, language: str) -> str:
 
 
 def generate_one(prompt: str, tokenizer, model) -> str:
+    print(prompt)
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
