@@ -69,12 +69,12 @@ if __name__ == '__main__':
     if language == 'C++':
         assert compiler == 'Clang'
         file = 'generation.cpp'
-        command = ("clang", "generation.cpp", "-emit-llvm", "-o", "-O3")  # ???
+        command = ("clang", "-S", "-Os", "-fsave-optimization-record=yaml", "generation.cpp")
     elif language == 'Python':
         if compiler == 'Cython':
-            command = ("cython", "generation.py", "-+", "--3")  # ???
+            command = ("cython", "generation.py", "-+", "--3")
         elif compiler == 'Codon':
-            command = ("codon", "build", "-release", "-llvm", "generation.py")  # ???
+            command = ("codon", "build", "-release", "-llvm", "generation.py")
         else:
             raise ValueError
         file = 'generation.py'
@@ -107,7 +107,11 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            generated_examples[i * num_tasks + j] = dict(task_id=example['task_id'], sample=i, prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
+            if compilable and language == 'C++' and compiler == 'Clang':
+                optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
+                generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization[optimization.rfind("< generation.cpp\n") + 17:])
+            else:
+                generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
 
     logger.info("Generate all over!!!")
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)

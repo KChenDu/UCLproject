@@ -88,7 +88,7 @@ if __name__ == '__main__':
     if language == 'C++':
         assert compiler == 'Clang'
         file = 'generation.cpp'
-        command = ("clang", "-S", "-O3", "-fsave-optimization-record=yaml", "generation.cpp")
+        command = ("clang", "-S", "-Os", "-fsave-optimization-record=yaml", "generation.cpp")
     elif language == 'Python':
         if compiler == 'Cython':
             command = ("cython", "generation.py", "-+", "--3")
@@ -128,11 +128,10 @@ if __name__ == '__main__':
             compilable = output.returncode == 0
             if compilable and language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
-                optimization = optimization[optimization.rfind("< generation.cpp\n") + 17:]
-                print(optimization)
-                generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization)
+                generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization[optimization.rfind("< generation.cpp\n") + 17:])
             else:
                 generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
+
     logger.info("Generate all over!!!")
     write_jsonl("leetcode_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into leetcode_compiler_feedbacks.jsonl over!")
