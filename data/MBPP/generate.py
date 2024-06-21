@@ -44,9 +44,10 @@ Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
             yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
     elif language == 'C++':
-        examples_str = [None]
-        for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='// Write the solution here.')
+
+        examples_str = [None, None, None]
+        for i in range(3):
+            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='')
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
         for example in train_examples:
@@ -74,6 +75,7 @@ def convert_for_evaluation(generation: str, language: str) -> str:
 
 
 def generate_one(prompt: str, tokenizer, model) -> str:
+    print(prompt)
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
