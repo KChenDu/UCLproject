@@ -27,8 +27,9 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
                 raise ValueError
         return prompt
 
-    examples_str = [None, None, None]
+
     if language == 'Python':
+        examples_str = [None, None, None]
         for i in range(3):
             example_prompt = format_train_example(prompt_examples[i]['text'], 'Python', prompt_examples[i]['test_list'], prompt_examples[i]['code'])
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
@@ -43,7 +44,8 @@ Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
             yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
     elif language == 'C++':
-        for i in range(3):
+        examples_str = [None]
+        for i in range(1):
             example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='...')
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
@@ -72,7 +74,6 @@ def convert_for_evaluation(generation: str, language: str) -> str:
 
 
 def generate_one(prompt: str, tokenizer, model) -> str:
-    print(prompt)
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
@@ -136,7 +137,7 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            print(compilable, '\n\n\n\n\n')
+            print(output.stderr.decode())
             if compilable and language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                 print(optimization[optimization.rfind("< generation.cpp\n") + 17:])
