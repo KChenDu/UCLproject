@@ -122,7 +122,6 @@ if __name__ == '__main__':
         examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model, language)
-            print(generation)
             with (open(file, 'w') as generation_file):
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
@@ -130,7 +129,7 @@ if __name__ == '__main__':
             if language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                 optimization = optimization[optimization.rfind("< generation.cpp\n") + 17:]
-                print("!!!!\n\n", optimization)
+                print(optimization)
                 generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization)
             else:
                 generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
