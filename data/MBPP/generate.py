@@ -14,7 +14,7 @@ from human_eval.data import write_jsonl
 
 def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, language: str) -> dict:
     def format_train_example(q: str, language: str, tests: list[str] = None, code: str = None):
-        prompt = ">>> Problem:\n{}\n".format(q.strip())
+        prompt = ">>> Problem:\n{}\n".format(q.strip().replace('python', 'C++'))
         if tests is not None:
             prompt += ">>> Test Cases:\n{}\n".format('\n'.join(tests))
         if code is not None:
@@ -55,7 +55,9 @@ Examples are listed as follows:
 
 Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
-            yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
+            yield {'task_id': example['task_id'], 'text': example['text'].replace('python', 'C++'), 'prompt': prompt_with_shots, 'code': example['code']}
+    else:
+        raise ValueError
 
 
 def convert_for_evaluation(generation: str, language: str) -> str:
@@ -134,6 +136,7 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
+            print(compilable, '\n\n\n\n\n')
             if compilable and language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                 print(optimization[optimization.rfind("< generation.cpp\n") + 17:])
