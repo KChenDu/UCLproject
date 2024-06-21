@@ -46,7 +46,7 @@ Here is my problem:
     elif language == 'C++':
         examples_str = [None]
         for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='...')
+            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='// solution here')
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
         for example in train_examples:
