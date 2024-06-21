@@ -88,7 +88,7 @@ if __name__ == '__main__':
     if language == 'C++':
         assert compiler == 'Clang'
         file = 'generation.cpp'
-        command = ("clang", "-S", "-O2", "-fsave-optimization-record=yaml", "generation.cpp")
+        command = ("clang", "-S", "-O3", "-fsave-optimization-record=yaml", "generation.cpp")
     elif language == 'Python':
         if compiler == 'Cython':
             command = ("cython", "generation.py", "-+", "--3")
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            if language == 'C++' and compiler == 'Clang':
+            if compilable and language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                 optimization = optimization[optimization.rfind("< generation.cpp\n") + 17:]
                 print(optimization)
