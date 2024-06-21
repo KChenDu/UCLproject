@@ -13,7 +13,7 @@ from human_eval.data import write_jsonl
 
 
 def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, language: str) -> dict:
-    def format_test_example(q: str, code: str = None):
+    def format_train_example(q: str, code: str = None):
         prompt = ">>> Problem:\n{}\n".format(q.strip())
         if code is not None:
             code = code.replace("\r", "").replace("\t", "    ")
@@ -24,10 +24,10 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
 
     if language == 'C++':
         for i in range(1):
-            example_prompt = format_test_example(prompt_examples[i]['content'], search('```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group())
+            example_prompt = format_train_example(prompt_examples[i]['content'], search('```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group())
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
         for example in train_examples:
-            prompt = format_test_example(example['content'])
+            prompt = format_train_example(example['content'])
             prompt_with_shots = '''Please refer the given example and generate a C++ function for my problem.
 Examples are listed as follows:
 {}
@@ -37,10 +37,10 @@ Here is my problem:
             yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': search('```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group()[7:-3]}
     elif language == 'Python':
         for i in range(1):
-            example_prompt = format_test_example(prompt_examples[i]['content'], search('```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group())
+            example_prompt = format_train_example(prompt_examples[i]['content'], search('```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group())
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
         for example in train_examples:
-            prompt = format_test_example(example['content'])
+            prompt = format_train_example(example['content'])
             prompt_with_shots = '''Please refer the given example and generate a Python function for my problem.
 Examples are listed as follows:
 {}
@@ -91,9 +91,9 @@ if __name__ == '__main__':
         command = ("clang", "generation.cpp", "-emit-llvm", "-o", "-O3") # ???
     elif language == 'Python':
         if compiler == 'Cython':
-            command = ("cython", "generation.py", "-+", "--3") # ???
+            command = ("cython", "generation.py", "-+", "--3")
         elif compiler == 'Codon':
-            command = ("codon", "build", "-release", "-llvm", "generation.py") # ???
+            command = ("codon", "build", "-release", "-llvm", "generation.py")
         else:
             raise ValueError
         file = 'generation.py'
@@ -123,11 +123,11 @@ if __name__ == '__main__':
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model, language)
             print(generation)
-            # with (open(file, 'w') as generation_file):
-            #     print(generation, file=generation_file)
-            # output = run(command, capture_output=True)
-            # compilable = output.returncode == 0
-            # generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
+            with (open(file, 'w') as generation_file):
+                print(generation, file=generation_file)
+            output = run(command, capture_output=True)
+            compilable = output.returncode == 0
+            generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
 
     logger.info("Generate all over!!!")
     write_jsonl("leetcode_compiler_feedback.jsonl", generated_examples)
@@ -140,3 +140,4 @@ if __name__ == '__main__':
         remove("generation.cpp")
     else:
         raise ValueError
+# Why each opt

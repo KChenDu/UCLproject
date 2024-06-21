@@ -13,7 +13,7 @@ from human_eval.data import write_jsonl
 
 
 def read_train_examples(train_examples: Dataset, prompt_examples: Dataset) -> dict:
-    def format_test_example(q: str, tests: list[str], code: str = None):
+    def format_train_example(q: str, tests: list[str], code: str = None):
         prompt = ">>> Problem:\n{}\n>>> Test Cases:\n{}\n".format(q.strip(), '\n'.join(tests))
         if code is not None:
             code = code.replace("\r", "").replace("\t", "    ")
@@ -22,11 +22,11 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset) -> di
 
     examples_str = [None, None, None]
     for i in range(3):
-        example_prompt = format_test_example(prompt_examples[i]['text'], prompt_examples[i]['test_list'], prompt_examples[i]['code'])
+        example_prompt = format_train_example(prompt_examples[i]['text'], prompt_examples[i]['test_list'], prompt_examples[i]['code'])
         examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
     for example in train_examples:
-        prompt = format_test_example(example['text'], example['test_list'])
+        prompt = format_train_example(example['text'], example['test_list'])
         prompt_with_shots = '''Please refer the given examples and generate a python function for my problem.
 Examples are listed as follows:
 {}
@@ -57,25 +57,41 @@ def generate_one(prompt: str, tokenizer, model) -> str:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
-    parser.add_argument('--num_samples_per_task', default=1, type=int)
-    parser.add_argument('--compiler',  choices=["Cython", "Codon"], default="Codon", type=str)
+    parser.add_argument('--language', choices=('C++', 'Python'), default='C++')
+    parser.add_argument('--model', choices=('deepseek-ai/deepseek-coder-1.3b-base', 'deepseek-ai/deepseek-coder-1.3b-instruct'), default='deepseek-ai/deepseek-coder-1.3b-base', type=str)
+    parser.add_argument('--num_samples_per_task', default=10, type=int)
+    parser.add_argument('--compiler', choices=['Clang', 'Cython', 'Codon'], default='Clang', type=str)
+    parser.add_argument('--demo', action='store_true')
     args = parser.parse_args()
 
-    manual_seed(42)
     compiler = args.compiler
-    if compiler == "Cython":
-        command = ["cython", "generation.py", "-+", "--3"]
-    elif compiler == "Codon":
-        command = ["codon",  "build", "-release", "-llvm", "generation.py"]
+    language = args.language
+    if language == 'C++':
+        assert compiler == 'Clang'
+        file = 'generation.cpp'
+        command = ("clang", "generation.cpp", "-emit-llvm", "-o", "-O3")  # ???
+    elif language == 'Python':
+        if compiler == 'Cython':
+            command = ("cython", "generation.py", "-+", "--3")  # ???
+        elif compiler == 'Codon':
+            command = ("codon", "build", "-release", "-llvm", "generation.py")  # ???
+        else:
+            raise ValueError
+        file = 'generation.py'
     else:
         raise ValueError
 
-    num_samples_per_task = args.num_samples_per_task
-    generated_examples = [None] * num_samples_per_task * 374
+    manual_seed(42)
     num_proc = cpu_count()
     prompt_examples = load_dataset("mbpp", split="prompt", num_proc=num_proc)
-    train_examples = load_dataset("mbpp", split="train", num_proc=num_proc)
+    if args.demo:
+        train_examples = load_dataset("mbpp", split="train[:10]", num_proc=num_proc)
+    else:
+        train_examples = load_dataset("mbpp", split="train", num_proc=num_proc)
+
+    num_samples_per_task = args.num_samples_per_task
+    num_tasks = train_examples.num_rows
+    generated_examples = [None] * num_tasks * num_samples_per_task
 
     model_name_or_path = args.model
     logger.info("model " + model_name_or_path)
@@ -84,24 +100,25 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i in range(num_samples_per_task):
-        examples = read_train_examples(train_examples, prompt_examples)
-        for j, example in enumerate(tqdm(examples, f"sample {i}", 374, leave=False, unit="example")):
+        examples = read_train_examples(train_examples, prompt_examples) # !!!
+        for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             generation = generate_one(example['prompt'], tokenizer, model)
             with (open('generation.py', 'w') as generation_file):
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            generated_examples[i * 374 + j] = dict(task_id=example['task_id'], sample=i, prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
+            generated_examples[i * num_tasks + j] = dict(task_id=example['task_id'], sample=i, prompt=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
 
     logger.info("Generate all over!!!")
-    remove("generation.py")
-    if compiler == "Cython":
-        remove("generation.cpp")
-    elif compiler == "Codon":
+    write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
+    logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into mbpp_compiler_feedbacks.jsonl over!")
+
+    remove(file)
+    if compiler in ('Clang', 'Codon'):
         remove("generation.ll")
+    elif compiler == "Cython":
+        remove("generation.cpp")
     else:
         raise ValueError
-    write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
-    logger.info(f"Save {num_samples_per_task * 374} processed examples into mbpp_compiler_feedbacks.jsonl over!")
 # Fine-tune DPO and SFT sources
 # check if deepseek support LORA
