@@ -137,7 +137,6 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            print(output.stderr.decode())
             if compilable and language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                 print(optimization[optimization.rfind("< generation.cpp\n") + 17:])
