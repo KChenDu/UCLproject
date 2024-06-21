@@ -55,9 +55,9 @@ Here is my problem:
 def convert_for_evaluation(generation: str, language: str) -> str:
     try:
         if language == 'C++':
-            generation = search(f'```cpp\n.*?\n```', generation, DOTALL).group()[10:-3]
+            generation = search(f'```cpp\n.*?\n```', generation, DOTALL).group()[7:-3]
         if language == 'Python':
-            generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[7:-3]
+            generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
     return generation
@@ -130,7 +130,7 @@ if __name__ == '__main__':
             if language == 'C++' and compiler == 'Clang':
                 optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                 optimization = optimization[optimization.rfind("< generation.cpp\n") + 17:]
-                print(optimization)
+                print("!!!!\n\n", optimization)
                 generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization)
             else:
                 generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
