@@ -44,7 +44,23 @@ Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
             yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
     elif language == 'C++':
+        codes = ['''''',
+                 '''#include <vector>
+#include <unordered_set>
+#include <iostream>
+using namespace std;
 
+vector<int> similar_elements(vector<int>& test_tup1, vector<int>& test_tup2) {
+    vector<int> res;
+    unordered_set<int> set;
+    for (int element : test_tup1)
+        set.insert(element);
+    for (int element : test_tup2)
+        if (set.find(element) != set.end())
+            res.push_back(element);
+    return res;
+}''',
+                 '''''']
         examples_str = [None, None, None]
         for i in range(3):
             example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='')
