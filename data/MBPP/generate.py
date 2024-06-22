@@ -44,10 +44,29 @@ Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
             yield {'task_id': example['task_id'], 'text': example['text'], 'prompt': prompt_with_shots, 'code': example['code']}
     elif language == 'C++':
-        codes = ['''''',
+        codes = ['''#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+int R = 3;
+int C = 3;
+
+int min_cost(vector<vector<int>>& cost, int m, int n) {
+    vector<vector<int>> tc(R, vector<int>(C));
+    tc[0][0] = cost[0][0];
+    for (int i = 1; i <= n; ++i)
+        tc[0][i] = tc[0][i - 1] + cost[0][i];
+    for (int i = 1; i <= m; ++i)
+        tc[i][0] = tc[i - 1][0] + cost[i][0];
+    for (int i = 1; i <= m; ++i)
+        for (int j = 1; j <= n; ++j)
+            tc[i][j] = min({tc[i - 1][j - 1], tc[i - 1][j], tc[i][j - 1]}) + cost[i][j];
+    return tc[m][n];
+}''',
                  '''#include <vector>
 #include <unordered_set>
-#include <iostream>
+
 using namespace std;
 
 vector<int> similar_elements(vector<int>& test_tup1, vector<int>& test_tup2) {
@@ -60,10 +79,20 @@ vector<int> similar_elements(vector<int>& test_tup1, vector<int>& test_tup2) {
             res.push_back(element);
     return res;
 }''',
-                 '''''']
+                 '''#include <cmath>
+
+using namespace std;
+
+bool is_not_prime(int n) {
+    int sqrt_n = sqrt(n);
+    for (int i = 2; i <= sqrt_n; ++i)
+        if (n % i == 0)
+            return true;
+    return false;
+}''']
         examples_str = [None, None, None]
         for i in range(3):
-            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code='')
+            example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code=codes[i])
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
         for example in train_examples:
