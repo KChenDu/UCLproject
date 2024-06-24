@@ -6,18 +6,17 @@
 1. Install `jupyter` via Anaconda
 2. Install Pytorch
     ```zsh
-    conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
+    pip3 install torch --index-url https://download.pytorch.org/whl/cu121
     ```
-3. Install `datasets`, `transformers` and `cython` via Anaconda
-4. Install pip packages
+3. Install pip packages
     ```zsh
-    pip install tqdm loguru
+    pip install transformers[torch] datasets cython scikit-learn evaluate tqdm loguru
     ```
-5. Install `huggingface_hub[cli]`
+4. Install `huggingface_hub[cli]`
    ```zsh
    pip install -U "huggingface_hub[cli]"
    ```
-6. Update submodules
+5. Update submodules
    - First time
        ```zsh
        git submodule update --init --recursive
@@ -26,8 +25,7 @@
        ```zsh
        git submodule update --recursive --remote
        ```
-
-7. Install `human-eval`
+6. Install `human-eval`
    ```zsh
    pip install -e human-eval
    ```
@@ -35,21 +33,17 @@
 ### Ubuntu
 1. Install Pytorch
     ```zsh
-    conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
+    pip3 install torch --index-url https://download.pytorch.org/whl/cu121
     ```
 2. Install conda packeges
    ```zsh
-   conda install datasets transformers cython
+   pip install transformers[torch] datasets cython evaluate tqdm loguru
    ```
-3. Install pip packages
-    ```zsh
-    pip install tqdm loguru
-    ```
-5. Install `huggingface_hub[cli]`
+3. Install `huggingface_hub[cli]`
    ```zsh
    pip install -U "huggingface_hub[cli]"
    ```
-6. Update submodules
+4. Update submodules
    - First time
        ```zsh
        git submodule update --init --recursive
@@ -71,7 +65,8 @@
 ## Generate
 ---
 ```zsh
-python data/generate [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK]
+python data/MBPP/generate [--language LANGUAGE] [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK] [--compiler COMPILER] [--demo]
+python data/MBPP/generate [--language LANGUAGE] [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK] [--compiler COMPILER] [--demo]
 ```
 ---
 ## Evaluation
