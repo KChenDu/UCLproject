@@ -27,9 +27,8 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
                 raise ValueError
         return prompt
 
-
+    examples_str = [None, None, None]
     if language == 'Python':
-        examples_str = [None, None, None]
         for i in range(3):
             example_prompt = format_train_example(prompt_examples[i]['text'], 'Python', prompt_examples[i]['test_list'], prompt_examples[i]['code'])
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
@@ -90,7 +89,6 @@ bool is_not_prime(int n) {
             return true;
     return false;
 }''']
-        examples_str = [None, None, None]
         for i in range(3):
             example_prompt = format_train_example(prompt_examples[i]['text'], 'C++', code=codes[i])
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
@@ -135,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--language', choices=('C++', 'Python'), default='C++')
     parser.add_argument('--model', choices=('deepseek-ai/deepseek-coder-1.3b-base', 'deepseek-ai/deepseek-coder-1.3b-instruct'), default='deepseek-ai/deepseek-coder-1.3b-base', type=str)
     parser.add_argument('--num_samples_per_task', default=10, type=int)
-    parser.add_argument('--compiler', choices=['Clang', 'Cython', 'Codon'], default='Clang', type=str)
+    parser.add_argument('--compiler', choices=('Clang', 'Cython', 'Codon'), default='Clang', type=str)
     parser.add_argument('--demo', action='store_true')
     args = parser.parse_args()
 

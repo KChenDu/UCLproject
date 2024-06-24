@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--language', choices=('C++', 'Python'), default='C++')
     parser.add_argument('--model', choices=('deepseek-ai/deepseek-coder-1.3b-base', 'deepseek-ai/deepseek-coder-1.3b-instruct'), default='deepseek-ai/deepseek-coder-1.3b-base', type=str)
     parser.add_argument('--num_samples_per_task', default=10, type=int)
-    parser.add_argument('--compiler',  choices=['Clang', 'Cython', 'Codon'], default='Clang', type=str)
+    parser.add_argument('--compiler',  choices=('Clang', 'Cython', 'Codon'), default='Clang', type=str)
     parser.add_argument('--demo', action='store_true')
     args = parser.parse_args()
 
