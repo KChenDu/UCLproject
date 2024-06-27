@@ -24,7 +24,7 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
 
     if language == 'C++':
         for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['content'], search('```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group())
+            example_prompt = format_train_example(prompt_examples[i]['content'], prompt_examples[i]['c++'])
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
         for example in train_examples:
             prompt = format_train_example(example['content'])
@@ -34,10 +34,10 @@ Examples are listed as follows:
     
 Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
-            yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': search('```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group()[7:-3]}
+            yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': example['c++'][7:-3]}
     elif language == 'Python':
         for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['content'], search('```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group())
+            example_prompt = format_train_example(prompt_examples[i]['content'], prompt_examples[i]['python'])
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
         for example in train_examples:
             prompt = format_train_example(example['content'])
@@ -47,7 +47,7 @@ Examples are listed as follows:
 
 Here is my problem:
 {}'''.format('\n\n'.join(examples_str), prompt)
-            yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': search(f'```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group()[10:-3]}
+            yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': example['python'][10:-3]}
     else:
         raise ValueError
 
@@ -125,12 +125,14 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            if compilable and language == 'C++' and compiler == 'Clang':
-                optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
-                generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization[optimization.rfind("< generation.cpp\n") + 17:])
+            if compilable:
+                generated_example = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=True)
+                if language == 'C++' and compiler == 'Clang':
+                    optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
+                    generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
             else:
-                generated_examples[i * num_tasks + j] = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
-
+                generated_example = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=False, output=output.stderr.decode())
+            generated_examples[i * num_tasks + j] = generated_example
     logger.info("Generate all over!!!")
     write_jsonl("leetcode_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into leetcode_compiler_feedbacks.jsonl over!")

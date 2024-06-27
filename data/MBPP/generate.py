@@ -180,12 +180,16 @@ if __name__ == '__main__':
                 print(generation, file=generation_file)
             output = run(command, capture_output=True)
             compilable = output.returncode == 0
-            if compilable and language == 'C++' and compiler == 'Clang':
-                optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
-                generated_examples[i * num_tasks + j] = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=compilable, output=output.stderr.decode(), optimization=optimization[optimization.rfind("< generation.cpp\n") + 17:])
+            if compilable:
+                generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=True)
+                if language == 'C++' and compiler == 'Clang':
+                    optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
+                    generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
             else:
-                generated_examples[i * num_tasks + j] = dict(task_id=example['task_id'], sample=i, content=example['text'], code=example['code'], generation=generation, compilable=compilable, output=output.stderr.decode())
-
+                generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=False, output=output.stderr.decode())
+            if language == 'Python':
+                generated_example['code'] = example['code']
+            generated_examples[i * num_tasks + j] = generated_example
     logger.info("Generate all over!!!")
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into mbpp_compiler_feedbacks.jsonl over!")
