@@ -1,5 +1,6 @@
 *__pycache__
 .idea
+demo/test_trainer
 Evaluation/HumanEval/humaneval_samples.jsonl
 Evaluation/HumanEval/humaneval_samples.jsonl_results.jsonl
 Evaluation/HumanEval-X/humaneval-x-python_samples.jsonl

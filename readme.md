@@ -10,7 +10,7 @@
     ```
 3. Install pip packages
     ```zsh
-    pip install transformers[torch] datasets cython scikit-learn evaluate tqdm loguru
+    pip install transformers[torch] datasets cython scikit-learn evaluate trl peft tqdm loguru
     ```
 4. Install `huggingface_hub[cli]`
    ```zsh
@@ -37,7 +37,7 @@
     ```
 2. Install conda packeges
    ```zsh
-   pip install transformers[torch] datasets cython evaluate tqdm loguru
+   pip install transformers[torch] datasets cython evaluate trl peft tqdm loguru
    ```
 3. Install `huggingface_hub[cli]`
    ```zsh
