@@ -20,7 +20,7 @@ from peft import LoraConfig, get_peft_model
 
 base_model = AutoModelForCausalLM.from_pretrained('deepseek-ai/deepseek-coder-1.3b-base', trust_remote_code=True).cuda()
 
-lora_config = LoraConfig(r=1, target_modules=["k_proj"])
+lora_config = LoraConfig(r=1)
 peft_model = get_peft_model(base_model, lora_config)
 
 for e in base_model.modules():
