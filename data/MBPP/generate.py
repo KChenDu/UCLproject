@@ -198,8 +198,7 @@ if __name__ == '__main__':
                         output = output[15:]
                     else:
                         raise ValueError
-                    print(generation.splitlines()[:int(output[:output.find(':')]) - 1])
-                    new_prompt = prompt + generation.splitlines()[:int(output[:output.find(':')]) - 1].join('\n')
+                    new_prompt = prompt + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1])
                     print(new_prompt)
                 if language == 'Python':
                     generated_example['code'] = example['code']
