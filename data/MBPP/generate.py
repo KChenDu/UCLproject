@@ -185,6 +185,7 @@ if __name__ == '__main__':
             attempt = 0
             while attempt < 3 and not compilable:
                 generation = generate_one(prompt, new_prompt, tokenizer, model)
+                print(generation)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
                 output = run(command, capture_output=True)
@@ -196,6 +197,7 @@ if __name__ == '__main__':
                         generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
                 else:
                     output = output.stderr.decode()
+                    print(output)
                     generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
