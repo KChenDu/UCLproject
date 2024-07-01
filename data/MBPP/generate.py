@@ -196,14 +196,14 @@ if __name__ == '__main__':
                 output = run(command, capture_output=True)
                 compilable = output.returncode == 0
                 if compilable:
-                    generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=True)
+                    generated_example = dict(task_id=example['task_id'], sample=i, attempt=attempt, content=example['text'], generation=generation, compilable=True)
                     if language == 'C++' and compiler == 'Clang':
                         optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
                         generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
                 else:
                     output = output.stderr.decode()
                     print(output)
-                    generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=False, output=output)
+                    generated_example = dict(task_id=example['task_id'], sample=i, attempt=attempt, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
                         new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
@@ -230,5 +230,3 @@ if __name__ == '__main__':
         remove("generation.cpp")
     else:
         raise ValueError
-# Fine-tune DPO and SFT sources
-# check if deepseek support LORA
