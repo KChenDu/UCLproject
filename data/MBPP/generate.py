@@ -39,7 +39,7 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
 
         for example in train_examples:
-            prompt = format_train_example(example['text'], example['test_list'], 'Python')
+            prompt = format_train_example(example['text'], language, example['test_list'])
             prompt_with_shots = '''Please refer the given examples and generate a Python function for my problem.
 Examples are listed as follows:
 {}
