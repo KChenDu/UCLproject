@@ -184,7 +184,7 @@ if __name__ == '__main__':
             compilable = False
             attempt = 0
             while attempt < 3 and not compilable:
-                generation = generate_one(new_prompt, tokenizer, model)
+                generation = generate_one(prompt, new_prompt, tokenizer, model)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
                 output = run(command, capture_output=True)
@@ -205,6 +205,7 @@ if __name__ == '__main__':
                         new_prompt = prompt + ">>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1])
                     else:
                         raise ValueError
+                    print(new_prompt)
                 if language == 'Python':
                     generated_example['code'] = example['code']
                 write_jsonl("mbpp_compiler_feedback.jsonl", [generated_example], True)
