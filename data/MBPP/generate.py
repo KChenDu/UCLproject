@@ -14,7 +14,12 @@ from human_eval.data import write_jsonl
 
 def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, language: str) -> dict:
     def format_train_example(q: str, language: str, tests: list[str] = None, code: str = None):
-        prompt = ">>> Problem:\n{}\n".format(q.strip().replace('python', 'C++'))
+        if language == 'Python':
+            prompt = ">>> Problem:\n{}\n".format(q.strip())
+        elif language == 'C++':
+            prompt = ">>> Problem:\n{}\n".format(q.strip().replace('python', 'C++'))
+        else:
+            raise ValueError
         if tests is not None:
             prompt += ">>> Test Cases:\n{}\n".format('\n'.join(tests))
         if code is not None:
@@ -117,7 +122,7 @@ def convert_for_evaluation(generation: str, language: str) -> str:
     return generation.lstrip()
 
 
-def generate_one(prompt: str, new_prompt: str, tokenizer, model) -> str:
+def generate_one(prompt: str, new_prompt: str, tokenizer, model, language: str) -> str:
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
@@ -184,7 +189,7 @@ if __name__ == '__main__':
             compilable = False
             attempt = 0
             while attempt < 3 and not compilable:
-                generation = generate_one(prompt, new_prompt, tokenizer, model)
+                generation = generate_one(prompt, new_prompt, tokenizer, model, language)
                 print(generation)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
@@ -201,10 +206,10 @@ if __name__ == '__main__':
                     generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
-                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1])
+                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     elif language == 'C++':
                         output = output[15:]
-                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1])
+                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     else:
                         raise ValueError
                     print(new_prompt)
