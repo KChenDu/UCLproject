@@ -114,7 +114,7 @@ def convert_for_evaluation(generation: str, language: str) -> str:
             generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
-    return generation
+    return generation.lstrip()
 
 
 def generate_one(prompt: str, tokenizer, model) -> str:
@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     num_samples_per_task = args.num_samples_per_task
     num_tasks = train_examples.num_rows
-    generated_examples = [None] * num_tasks * num_samples_per_task
+    generated_examples = []
 
     model_name_or_path = args.model
     logger.info("model " + model_name_or_path)
@@ -175,21 +175,33 @@ if __name__ == '__main__':
     for i in range(num_samples_per_task):
         examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
-            generation = generate_one(example['prompt'], tokenizer, model)
-            with (open(file, 'w') as generation_file):
-                print(generation, file=generation_file)
-            output = run(command, capture_output=True)
-            compilable = output.returncode == 0
-            if compilable:
-                generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=True)
-                if language == 'C++' and compiler == 'Clang':
-                    optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
-                    generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
-            else:
-                generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=False, output=output.stderr.decode())
-            if language == 'Python':
-                generated_example['code'] = example['code']
-            generated_examples[i * num_tasks + j] = generated_example
+            prompt = example['prompt']
+            compilable = False
+            attempt = 0
+            while attempt < 3 and not compilable:
+                generation = generate_one(prompt, tokenizer, model)
+                with (open(file, 'w') as generation_file):
+                    print(generation, file=generation_file)
+                output = run(command, capture_output=True)
+                compilable = output.returncode == 0
+                if compilable:
+                    generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=True)
+                    if language == 'C++' and compiler == 'Clang':
+                        optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
+                        generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
+                else:
+                    output = output.stderr.decode()
+                    generated_example = dict(task_id=example['task_id'], sample=i, content=example['text'], generation=generation, compilable=False, output=output)
+                    if language == 'Python':
+                        output = output[18:]
+                        prompt += generation.splitlines()[:int(output[:output.find(':')]) - 1].join('\n')
+                        print(prompt)
+                    elif language == 'C++':
+                        pass
+                if language == 'Python':
+                    generated_example['code'] = example['code']
+                generated_examples.append(generated_example)
+                attempt += 1
     logger.info("Generate all over!!!")
     write_jsonl("mbpp_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into mbpp_compiler_feedbacks.jsonl over!")

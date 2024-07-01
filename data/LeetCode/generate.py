@@ -59,7 +59,7 @@ def convert_for_evaluation(generation: str, language: str) -> str:
             generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
-    return generation
+    return generation.lstrip()
 
 
 def generate_one(prompt: str, tokenizer, model, language: str) -> str:
