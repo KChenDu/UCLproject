@@ -117,13 +117,18 @@ def convert_for_evaluation(generation: str, language: str) -> str:
     return generation.lstrip()
 
 
-def generate_one(prompt: str, tokenizer, model) -> str:
+def generate_one(prompt: str, new_prompt: str, tokenizer, model) -> str:
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    outputs = model.generate(inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
+    new_inputs = tokenizer.apply_chat_template(
+        [{"role": "user", "content": new_prompt}],
+        add_generation_prompt=True,
+        return_tensors="pt"
+    ).to(model.device)
+    outputs = model.generate(new_inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
     return convert_for_evaluation(output, language)
 
