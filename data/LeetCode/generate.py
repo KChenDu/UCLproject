@@ -131,6 +131,7 @@ if __name__ == '__main__':
             attempt = 0
             while attempt < 3 and not compilable:
                 generation = generate_one(prompt, new_prompt, tokenizer, model, language)
+                print(generation)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
                 output = run(command, capture_output=True)
@@ -142,6 +143,7 @@ if __name__ == '__main__':
                         generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
                 else:
                     output = output.stderr.decode()
+                    print(output)
                     generated_example = dict(task_id=example['id'], sample=i, attempt=attempt, content=example['content'], code=example['code'], generation=generation, compilable=False, output=output.stderr.decode())
                     if language == 'Python':
                         output = output[18:]
@@ -152,6 +154,7 @@ if __name__ == '__main__':
                         new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     else:
                         raise ValueError
+                    print(new_prompt)
                 write_jsonl("mbpp_compiler_feedback.jsonl", [generated_example], True)
                 attempt += 1
     logger.info("Generate all over!!!")
