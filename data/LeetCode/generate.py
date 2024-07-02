@@ -23,7 +23,7 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
     examples_str = [None]
     if language == 'C++':
         for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['content'], search(f'```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group()[7:-3])
+            example_prompt = format_train_example(prompt_examples[i]['content'], search(f'```cpp\n.*?\n```', prompt_examples[i]['c++'], DOTALL).group())
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
         for example in train_examples:
             prompt = format_train_example(example['content'])
@@ -36,7 +36,7 @@ Here is my problem:
             yield {'id': example['id'], 'content': example['content'], 'prompt': prompt_with_shots, 'code': example['c++'][7:-3]}
     elif language == 'Python':
         for i in range(1):
-            example_prompt = format_train_example(prompt_examples[i]['content'], search(f'```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group()[10:-3])
+            example_prompt = format_train_example(prompt_examples[i]['content'], search(f'```python\n.*?\n```', prompt_examples[i]['python'], DOTALL).group())
             examples_str[i] = f'- Example {i + 1}:\n{example_prompt}'
         for example in train_examples:
             prompt = format_train_example(example['content'])
