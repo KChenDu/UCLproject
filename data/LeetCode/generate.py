@@ -144,7 +144,7 @@ if __name__ == '__main__':
                 else:
                     output = output.stderr.decode()
                     print(output)
-                    generated_example = dict(task_id=example['id'], sample=i, attempt=attempt, content=example['content'], code=example['code'], generation=generation, compilable=False, output=output.stderr.decode())
+                    generated_example = dict(task_id=example['id'], sample=i, attempt=attempt, content=example['content'], code=example['code'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
                         new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(
