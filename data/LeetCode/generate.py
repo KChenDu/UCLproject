@@ -21,7 +21,6 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
         return prompt
 
     examples_str = [None]
-
     if language == 'C++':
         for i in range(1):
             example_prompt = format_train_example(prompt_examples[i]['content'], prompt_examples[i]['c++'])
@@ -51,6 +50,7 @@ Here is my problem:
     else:
         raise ValueError
 
+
 def convert_for_evaluation(generation: str, language: str) -> str:
     try:
         if language == 'C++':
@@ -62,13 +62,19 @@ def convert_for_evaluation(generation: str, language: str) -> str:
     return generation.lstrip()
 
 
-def generate_one(prompt: str, tokenizer, model, language: str) -> str:
+def generate_one(prompt: str, new_prompt: str, tokenizer, model, language: str) -> str:
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    outputs = model.generate(inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
+    new_inputs = tokenizer.apply_chat_template(
+        [{"role": "user", "content": new_prompt}],
+        add_generation_prompt=True,
+        return_tensors="pt"
+    ).to(model.device)
+    outputs = model.generate(new_inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92,
+                             pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
     return convert_for_evaluation(output, language)
 
@@ -109,7 +115,6 @@ if __name__ == '__main__':
 
     num_samples_per_task = args.num_samples_per_task
     num_tasks = train_examples.num_rows
-    generated_examples = [None] * num_tasks * num_samples_per_task
 
     model_name_or_path = args.model
     logger.info("model " + model_name_or_path)
@@ -120,21 +125,36 @@ if __name__ == '__main__':
     for i in range(num_samples_per_task):
         examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
-            generation = generate_one(example['prompt'], tokenizer, model, language)
-            with (open(file, 'w') as generation_file):
-                print(generation, file=generation_file)
-            output = run(command, capture_output=True)
-            compilable = output.returncode == 0
-            if compilable:
-                generated_example = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=True)
-                if language == 'C++' and compiler == 'Clang':
-                    optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
-                    generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
-            else:
-                generated_example = dict(task_id=example['id'], sample=i, content=example['content'], code=example['code'], generation=generation, compilable=False, output=output.stderr.decode())
-            generated_examples[i * num_tasks + j] = generated_example
+            prompt = example['prompt']
+            new_prompt = prompt
+            compilable = False
+            attempt = 0
+            while attempt < 3 and not compilable:
+                generation = generate_one(prompt, new_prompt, tokenizer, model, language)
+                with (open(file, 'w') as generation_file):
+                    print(generation, file=generation_file)
+                output = run(command, capture_output=True)
+                compilable = output.returncode == 0
+                if compilable:
+                    generated_example = dict(task_id=example['id'], sample=i, attempt=attempt, content=example['content'], code=example['code'], generation=generation, compilable=True)
+                    if language == 'C++' and compiler == 'Clang':
+                        optimization = run(("llvm-opt-report", "generation.opt.yaml"), capture_output=True).stdout.decode()
+                        generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
+                else:
+                    output = output.stderr.decode()
+                    generated_example = dict(task_id=example['id'], sample=i, attempt=attempt, content=example['content'], code=example['code'], generation=generation, compilable=False, output=output.stderr.decode())
+                    if language == 'Python':
+                        output = output[18:]
+                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(
+                            generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
+                    elif language == 'C++':
+                        output = output[15:]
+                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
+                    else:
+                        raise ValueError
+                write_jsonl("mbpp_compiler_feedback.jsonl", [generated_example], True)
+                attempt += 1
     logger.info("Generate all over!!!")
-    write_jsonl("leetcode_compiler_feedback.jsonl", generated_examples)
     logger.info(f"Save {num_tasks * num_samples_per_task} processed examples into leetcode_compiler_feedbacks.jsonl over!")
 
     remove(file)
