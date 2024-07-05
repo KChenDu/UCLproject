@@ -22,14 +22,7 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
             raise ValueError
         if tests is not None:
             prompt += ">>> Test Cases:\n{}\n".format('\n'.join(tests))
-        if code is None:
-            if language == 'Python':
-                prompt += f"\n>>> Code:\n```python\n"
-            elif language == 'C++':
-                prompt += f"\n>>> Code:\n```cpp\n"
-            else:
-                raise ValueError
-        else:
+        if code is not None:
             code = code.replace("\r", "").replace("\t", "    ")
             if language == 'Python':
                 prompt += f"\n>>> Code:\n```python\n{code}\n```"
@@ -192,7 +185,12 @@ if __name__ == '__main__':
         examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             prompt = example['prompt']
-            new_prompt = prompt
+            if language == 'Python':
+                new_prompt = prompt + "\n>>> Code:\n```python\n"
+            elif language == 'C++':
+                new_prompt = prompt + "\n>>> Code:\n```cpp\n"
+            else:
+                raise ValueError
             compilable = False
             attempt = 0
             while attempt < 3 and not compilable:
