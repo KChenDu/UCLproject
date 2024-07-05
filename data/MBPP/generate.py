@@ -185,8 +185,10 @@ if __name__ == '__main__':
         examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             prompt = example['prompt']
-            new_prompt = prompt
-            compilable = False
+            if language == 'Python':
+                new_prompt = prompt + "\n>>> Code:\n```python\n"
+            elif language == 'C++':
+                new_prompt = prompt + "\n>>> Code:\n```cpp\n"
             attempt = 0
             while attempt < 3 and not compilable:
                 generation = generate_one(prompt, new_prompt, tokenizer, model, language)
