@@ -134,7 +134,7 @@ def generate_one(prompt: str, new_prompt: str, tokenizer, model, language: str) 
         return_tensors="pt"
     ).to(model.device)
     outputs = model.generate(new_inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
-    output = tokenizer.decode(outputs[0][len(inputs[0]) + 1:], skip_special_tokens=True)
+    output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True).replace("[/INST]", "")
     return convert_for_evaluation(output, language)
 
 
@@ -186,9 +186,9 @@ if __name__ == '__main__':
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             prompt = example['prompt']
             if language == 'Python':
-                new_prompt = prompt
+                new_prompt = prompt + "\n>>> Code:\n```python\n"
             elif language == 'C++':
-                new_prompt = prompt
+                new_prompt = prompt + "\n>>> Code:\n```cpp\n"
             else:
                 raise ValueError
             compilable = False
@@ -211,10 +211,10 @@ if __name__ == '__main__':
                     generated_example = dict(task_id=example['task_id'], sample=i, attempt=attempt, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
-                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1])
+                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     elif language == 'C++':
                         output = output[15:]
-                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1])
+                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     else:
                         raise ValueError
                     print(new_prompt)
