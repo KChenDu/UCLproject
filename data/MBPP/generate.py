@@ -185,12 +185,14 @@ if __name__ == '__main__':
         examples = read_train_examples(train_examples, prompt_examples, language)
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             prompt = example['prompt']
-            new_prompt = prompt
+            if language == 'Python':
+                new_prompt = prompt + "\n>>> Code:\n```python\n"
+            elif language == 'C++':
+                new_prompt = prompt + "\n>>> Code:\n```cpp\n"
             compilable = False
             attempt = 0
             while attempt < 3 and not compilable:
                 generation = generate_one(prompt, new_prompt, tokenizer, model, language)
-                print(generation)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
                 output = run(command, capture_output=True)
@@ -202,7 +204,6 @@ if __name__ == '__main__':
                         generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
                 else:
                     output = output.stderr.decode()
-                    print(output)
                     generated_example = dict(task_id=example['task_id'], sample=i, attempt=attempt, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
@@ -212,7 +213,6 @@ if __name__ == '__main__':
                         new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     else:
                         raise ValueError
-                    print(new_prompt)
                 if language == 'Python':
                     generated_example['code'] = example['code']
                 write_jsonl("mbpp_compiler_feedback.jsonl", [generated_example], True)
