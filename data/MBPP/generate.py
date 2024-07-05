@@ -22,7 +22,14 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
             raise ValueError
         if tests is not None:
             prompt += ">>> Test Cases:\n{}\n".format('\n'.join(tests))
-        if code is not None:
+        if code is None:
+            if language == 'Python':
+                prompt += f"\n>>> Code:\n```python\n"
+            elif language == 'C++':
+                prompt += f"\n>>> Code:\n```cpp\n"
+            else:
+                raise ValueError
+        else:
             code = code.replace("\r", "").replace("\t", "    ")
             if language == 'Python':
                 prompt += f"\n>>> Code:\n```python\n{code}\n```"
@@ -114,9 +121,9 @@ Here is my problem:
 def convert_for_evaluation(generation: str, language: str) -> str:
     try:
         if language == 'C++':
-            generation = search(f'```cpp\n.*?\n```', generation, DOTALL).group()[7:-3]
+            generation = search('```cpp\n.*?\n```', generation, DOTALL).group()[7:-3]
         if language == 'Python':
-            generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
+            generation = search('```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
     return generation.lstrip()
@@ -190,6 +197,7 @@ if __name__ == '__main__':
             attempt = 0
             while attempt < 3 and not compilable:
                 generation = generate_one(prompt, new_prompt, tokenizer, model, language)
+                print(generation)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
                 output = run(command, capture_output=True)
@@ -201,15 +209,17 @@ if __name__ == '__main__':
                         generated_example['optimization'] = optimization[optimization.rfind("< generation.cpp\n") + 17:]
                 else:
                     output = output.stderr.decode()
+                    print(output)
                     generated_example = dict(task_id=example['task_id'], sample=i, attempt=attempt, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
-                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
+                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')])]) + '\n'
                     elif language == 'C++':
                         output = output[15:]
-                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
+                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')])]) + '\n'
                     else:
                         raise ValueError
+                    print(new_prompt)
                 if language == 'Python':
                     generated_example['code'] = example['code']
                 write_jsonl("mbpp_compiler_feedback.jsonl", [generated_example], True)

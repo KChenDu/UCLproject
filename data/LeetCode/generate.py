@@ -54,9 +54,9 @@ Here is my problem:
 def convert_for_evaluation(generation: str, language: str) -> str:
     try:
         if language == 'C++':
-            generation = search(f'```cpp\n.*?\n```', generation, DOTALL).group()[7:-3]
+            generation = search('```cpp\n.*?\n```', generation, DOTALL).group()[7:-3]
         if language == 'Python':
-            generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
+            generation = search('```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
     return generation.lstrip()
