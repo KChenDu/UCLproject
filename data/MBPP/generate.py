@@ -211,10 +211,10 @@ if __name__ == '__main__':
                     generated_example = dict(task_id=example['task_id'], sample=i, attempt=attempt, content=example['text'], generation=generation, compilable=False, output=output)
                     if language == 'Python':
                         output = output[18:]
-                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')])]) + '\n'
+                        new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     elif language == 'C++':
                         output = output[15:]
-                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')])]) + '\n'
+                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     else:
                         raise ValueError
                     print(new_prompt)
