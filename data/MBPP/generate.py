@@ -186,9 +186,9 @@ if __name__ == '__main__':
         for j, example in enumerate(tqdm(examples, f"sample {i}", num_tasks, leave=False, unit="example")):
             prompt = example['prompt']
             if language == 'Python':
-                new_prompt = prompt + "\n>>> Code:\n```python\n"
+                new_prompt = prompt
             elif language == 'C++':
-                new_prompt = prompt + "\n>>> Code:\n```cpp\n"
+                new_prompt = prompt
             else:
                 raise ValueError
             compilable = False
