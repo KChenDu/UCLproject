@@ -7,6 +7,6 @@ Evaluation/HumanEval-X/humaneval-x-python_samples.jsonl
 Evaluation/HumanEval-X/humaneval-x-python_samples_results.jsonl
 Evaluation/MBPP/data
 Evaluation/MBPP/mbpp_samples.jsonl
+checkpoints
 samples_mbpp.jsonl
 *playground.py
-*test.ipynb

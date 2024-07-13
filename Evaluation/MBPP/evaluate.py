@@ -38,7 +38,7 @@ Here is my problem:
 
 def convert_for_evaluation(generation: str) -> str:
     try:
-        generation = search(f'```python\n.*?\n```', generation, DOTALL).group()[10:-3]
+        generation = search('```python\n.*?\n```', generation, DOTALL).group()[10:-3]
     except Exception:
         logger.warning(f"Failed to extract codeblock:\n{generation}")
     return generation
