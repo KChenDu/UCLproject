@@ -143,6 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--language', choices=('C++', 'Python'), default='C++')
     parser.add_argument('--model', choices=('deepseek-ai/deepseek-coder-1.3b-base', 'deepseek-ai/deepseek-coder-1.3b-instruct'), default='deepseek-ai/deepseek-coder-1.3b-base', type=str)
     parser.add_argument('--num_samples_per_task', default=10, type=int)
+    parser.add_argument('--num_attempts', default=3, type=int)
     parser.add_argument('--compiler', choices=('Clang', 'Cython', 'Codon'), default='Clang', type=str)
     parser.add_argument('--demo', action='store_true')
     args = parser.parse_args()
@@ -172,6 +173,7 @@ if __name__ == '__main__':
     else:
         train_examples = load_dataset("mbpp", split="train", num_proc=num_proc)
 
+    num_attempts = args.num_attempts
     num_samples_per_task = args.num_samples_per_task
     num_tasks = train_examples.num_rows
 
@@ -191,7 +193,7 @@ if __name__ == '__main__':
                 new_prompt = prompt + "\n>>> Code:\n```cpp\n"
             compilable = False
             attempt = 0
-            while attempt < 3 and not compilable:
+            while attempt < num_attempts and not compilable:
                 generation = generate_one(prompt, new_prompt, tokenizer, model, language)
                 with (open(file, 'w') as generation_file):
                     print(generation, file=generation_file)
