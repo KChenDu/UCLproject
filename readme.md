@@ -6,7 +6,7 @@
 1. Install `jupyter` via Anaconda
 2. Install Pytorch
     ```zsh
-    pip3 install torch --index-url https://download.pytorch.org/whl/cu121
+    conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
     ```
 3. Install pip packages
     ```zsh
@@ -33,11 +33,11 @@
 ### Ubuntu
 1. Install Pytorch
     ```zsh
-    pip3 install torch --index-url https://download.pytorch.org/whl/cu121
+    conda install pytorch pytorch-cuda=12.1 -c pytorch -c nvidia
     ```
 2. Install conda packeges
    ```zsh
-   pip install transformers[torch] datasets cython evaluate trl peft tqdm loguru
+   pip install 'transformers[torch]' datasets cython scikit-learn evaluate trl peft tqdm loguru
    ```
 3. Install `huggingface_hub[cli]`
    ```zsh
@@ -65,8 +65,8 @@
 ## Generate
 ---
 ```zsh
-python data/MBPP/generate [--language LANGUAGE] [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK] [--compiler COMPILER] [--demo]
-python data/MBPP/generate [--language LANGUAGE] [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK] [--compiler COMPILER] [--demo]
+python data/MBPP/generate [--language LANGUAGE] [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK] [--num_attempts NUM_ATTEMPTS] [--compiler COMPILER] [--demo]
+python data/LeetCode/generate [--language LANGUAGE] [--model MODEL] [--num_samples_per_task NUM_SAMPLES_PER_TASK] [--compiler COMPILER] [--demo]
 ```
 ---
 ## Evaluation
