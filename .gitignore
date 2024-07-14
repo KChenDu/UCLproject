@@ -9,4 +9,3 @@ Evaluation/MBPP/data
 Evaluation/MBPP/mbpp_samples.jsonl
 checkpoints
 samples_mbpp.jsonl
-make_DPO_dataset.py
