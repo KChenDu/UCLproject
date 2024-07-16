@@ -133,18 +133,18 @@ def generate_one(prompt: str, new_prompt: str, tokenizer, model, language: str) 
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    outputs = model.generate(new_inputs, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
+    outputs = model.generate(new_inputs, temperature=.9, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True).replace(" [/INST]", "")
     return convert_for_evaluation(output, language)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--language', choices=('C++', 'Python'), default='C++')
+    parser.add_argument('--language', choices=('C++', 'Python'), default='Python')
     parser.add_argument('--model', choices=('deepseek-ai/deepseek-coder-1.3b-base', 'deepseek-ai/deepseek-coder-1.3b-instruct'), default='deepseek-ai/deepseek-coder-1.3b-base', type=str)
-    parser.add_argument('--num_samples_per_task', default=10, type=int)
-    parser.add_argument('--num_attempts', default=3, type=int)
-    parser.add_argument('--compiler', choices=('Clang', 'Cython', 'Codon'), default='Clang', type=str)
+    parser.add_argument('--num_samples_per_task', default=20, type=int)
+    parser.add_argument('--num_attempts', default=5, type=int)
+    parser.add_argument('--compiler', choices=('Clang', 'Cython', 'Codon'), default='Codon', type=str)
     parser.add_argument('--demo', action='store_true')
     args = parser.parse_args()
 
