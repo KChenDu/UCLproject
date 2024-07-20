@@ -1,32 +1,20 @@
-import signal
-
-from contextlib import contextmanager
-from signal import setitimer, ITIMER_REAL, signal, SIGALRM
-from datasets import load_dataset
+from argparse import ArgumentParser
+from pathlib import Path
 from os import cpu_count
-from json import loads
+from datasets import load_dataset
+from json import loads, dump
+from context import time_limit
 from random import choice
-from json import dump
-
-
-class TimeoutException(Exception):
-    pass
-
-
-@contextmanager
-def time_limit(seconds: float):
-    def signal_handler(signum, frame):
-        raise TimeoutException("Timed out!")
-
-    setitimer(ITIMER_REAL, seconds)
-    signal(SIGALRM, signal_handler)
-    try:
-        yield
-    finally:
-        setitimer(ITIMER_REAL, 0)
 
 
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('path', type=str)
+    args = parser.parse_args()
+
+    path = Path(args.path)
+    assert path.is_file()
+
     task_id2test = {}
     dataset = load_dataset("mbpp", split="train", num_proc=cpu_count())
 
@@ -42,7 +30,7 @@ if __name__ == '__main__':
 
     task_id2samples = {}
 
-    with open('MBPP(Python)_nucleus92_3attempts.jsonl', 'r') as f:
+    with open('../MBPP(Python)_nucleus92_3attempts.jsonl', 'r') as f:
         for line in f:
             data = loads(line)
             data.pop('attempt')
@@ -103,5 +91,5 @@ if __name__ == '__main__':
                 else:
                     task_id2pairs[task_id] = [(task_id2reference[task_id], sample[-1]['generation'])]
 
-    with open('temp.json', 'w') as f:
+    with open('../temp.json', 'w') as f:
         dump(task_id2pairs, f, indent=4)
