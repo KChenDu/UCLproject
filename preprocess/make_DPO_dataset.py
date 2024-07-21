@@ -15,19 +15,6 @@ if __name__ == '__main__':
     path = Path(args.path)
     assert path.is_file()
 
-    task_id2test = {}
-    dataset = load_dataset("mbpp", split="train", num_proc=cpu_count())
-
-    for data in dataset:
-        task_id = data['task_id']
-        data.pop('task_id')
-        task_id2test[task_id] = data
-
-    task_id2reference = {}
-
-    for task_id, test in task_id2test.items():
-        task_id2reference[task_id] = test['code']
-
     task_id2samples = {}
 
     with open('../MBPP(Python)_nucleus92_3attempts.jsonl', 'r') as f:
