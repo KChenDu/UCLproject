@@ -25,9 +25,9 @@ def read_train_examples(train_examples: Dataset, prompt_examples: Dataset, langu
         if code is not None:
             code = code.replace("\r", "").replace("\t", "    ")
             if language == 'Python':
-                prompt += f"\n>>> Code:\n```python\n{code}\n```"
+                prompt += f">>> Code:\n```python\n{code}\n```"
             elif language == 'C++':
-                prompt += f"\n>>> Code:\n```cpp\n{code}\n```"
+                prompt += f">>> Code:\n```cpp\n{code}\n```"
             else:
                 raise ValueError
         return prompt
@@ -189,6 +189,7 @@ if __name__ == '__main__':
             prompt = example['prompt']
             if language == 'Python':
                 new_prompt = prompt + ">>> Code:\n```python\n"
+                print(new_prompt)
             elif language == 'C++':
                 new_prompt = prompt + ">>> Code:\n```cpp\n"
             compilable = False
@@ -210,12 +211,12 @@ if __name__ == '__main__':
                     if language == 'Python':
                         output = output[18:]
                         try:
-                            new_prompt = prompt + "\n>>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
+                            new_prompt = prompt + ">>> Code:\n```python\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                         except ValueError:
-                            new_prompt = prompt + "\n>>> Code:\n```python\n"
+                            new_prompt = prompt + ">>> Code:\n```python\n"
                     elif language == 'C++':
                         output = output[15:]
-                        new_prompt = prompt + "\n>>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
+                        new_prompt = prompt + ">>> Code:\n```cpp\n" + '\n'.join(generation.splitlines()[:int(output[:output.find(':')]) - 1]) + '\n'
                     else:
                         raise ValueError
                 if language == 'Python':
