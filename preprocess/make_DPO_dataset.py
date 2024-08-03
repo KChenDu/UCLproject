@@ -108,16 +108,19 @@ if __name__ == '__main__':
     path = Path(args.path)
     assert path.is_file()
 
+    task_id2positives = {}
+    task_id2negatives = {}
     task_id2data = {}
 
     n_cpu = cpu_count()
-    prompt_examples = load_dataset("mbpp", "full", split="prompt", num_proc=n_cpu)  #
-    train_examples = load_dataset("mbpp", "full", split="train", num_proc=n_cpu)  #
+    prompt_examples = load_dataset("mbpp", split="prompt", num_proc=n_cpu)  #
+    train_examples = load_dataset("mbpp", split="train", num_proc=n_cpu)  #
 
     for train_example in train_examples:
         task_id = train_example['task_id']
         train_example.pop('task_id')
         task_id2data[task_id] = train_example
+        task_id2positives[task_id] = [train_example['code'] + '\n```']
     del train_examples
 
     task_id2samples = {}
@@ -137,27 +140,52 @@ if __name__ == '__main__':
             else:
                 task_id2samples[task_id][sample].append(data)
 
-    dpo_dataset_dict = {
+    task_id2prompts = {}
+    compiler_dpo_dataset_dict = {
         "prompt": [],
         "chosen": [],
         "rejected": []
     }
 
     for task_id, samples in task_id2samples.items():
-        prompt = get_prompt(task_id, task_id2data, prompt_examples, 'Python') + ">>> Code:\n```python\n"
+        prompt = get_prompt(task_id, task_id2data, prompt_examples, 'Python')
+        task_id2prompts[task_id] = prompt
         for sample in samples:
             if sample[-1]['compilable']:
                 for attempt in sample[:-1]:
-                    dpo_dataset_dict["prompt"].append(prompt)
-                    dpo_dataset_dict["chosen"].append(sample[-1]['generation'] + "```")
-                    dpo_dataset_dict["rejected"].append(attempt['generation'])
-                if not sample[-1]['pass']:
-                    dpo_dataset_dict["prompt"].append(prompt)
-                    dpo_dataset_dict["chosen"].append(task_id2data[task_id]['code'] + "\n```")
-                    dpo_dataset_dict["rejected"].append(sample[-1]['generation'])
+                    compiler_dpo_dataset_dict["prompt"].append(prompt)
+                    compiler_dpo_dataset_dict["chosen"].append(sample[-1]['generation'] + "```")
+                    compiler_dpo_dataset_dict["rejected"].append(attempt['generation'])
+                if sample[-1]['pass']:
+                    task_id2positives[task_id].append(sample[-1]['generation'] + '```')
+                elif task_id in task_id2negatives:
+                    task_id2negatives[task_id].append(sample[-1]['generation'] + '```')
+                else:
+                    task_id2negatives[task_id] = [sample[-1]['generation'] + '```']
+            elif task_id in task_id2negatives:
+                task_id2negatives[task_id] += sample
             else:
-                dpo_dataset_dict["prompt"].append(prompt)
-                dpo_dataset_dict["chosen"].append(task_id2data[task_id]['code'] + "\n```")
-                dpo_dataset_dict["rejected"].append(sample[-1]['generation'])
-    with open('dpo_dataset_dict.json', 'w') as f:
-        dump(dpo_dataset_dict, f)
+                task_id2negatives[task_id] = sample
+
+    with open('compiler_dpo_dataset_dict.json', 'w') as f:
+        dump(compiler_dpo_dataset_dict, f)
+
+    test_dpo_dataset_dict = {
+        "prompt": [],
+        "chosen": [],
+        "rejected": []
+    }
+
+    for task_id, prompt in task_id2prompts.items():
+        if not (task_id in task_id2positives and task_id in task_id2negatives):
+            continue
+        positives = task_id2positives[task_id]
+        negatives = task_id2negatives[task_id]
+        for positive in positives:
+            for negative in negatives:
+                test_dpo_dataset_dict["prompt"].append(prompt)
+                test_dpo_dataset_dict["chosen"].append(positive)
+                test_dpo_dataset_dict["rejected"].append(negative)
+
+    with open('test_dpo_dataset_dict.json', 'w') as f:
+        dump(test_dpo_dataset_dict, f)

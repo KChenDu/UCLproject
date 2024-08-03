@@ -133,7 +133,7 @@ def generate_one(prompt: str, new_prompt: str, tokenizer, model, language: str) 
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    outputs = model.generate(new_inputs, temperature=.9, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
+    outputs = model.generate(new_inputs, temperature=.85, max_new_tokens=1024, do_sample=True, top_k=0, top_p=.92, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True).replace(" [/INST]", "")
     return convert_for_evaluation(output, language)
 
@@ -189,7 +189,6 @@ if __name__ == '__main__':
             prompt = example['prompt']
             if language == 'Python':
                 new_prompt = prompt + ">>> Code:\n```python\n"
-                print(new_prompt)
             elif language == 'C++':
                 new_prompt = prompt + ">>> Code:\n```cpp\n"
             compilable = False

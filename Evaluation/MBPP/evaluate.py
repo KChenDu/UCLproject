@@ -16,7 +16,7 @@ def read_test_examples(test_examples: Dataset, prompt_examples: Dataset) -> dict
         prompt = ">>> Problem:\n{}\n>>> Test Cases:\n{}\n".format(q.strip(), '\n'.join(tests))
         if code is not None:
             code = code.replace("\r", "").replace("\t", "    ")
-            prompt += f"\n>>> Code:\n```python\n{code}\n```"
+            prompt += f">>> Code:\n```python\n{code}\n```"
         return prompt
 
     # test_cases
@@ -44,20 +44,26 @@ def convert_for_evaluation(generation: str) -> str:
     return generation
 
 
-def generate_one(prompt: str, tokenizer, model) -> str:
+def generate_one(prompt: str, new_prompt: str, tokenizer, model) -> str:
     inputs = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}],
         add_generation_prompt=True,
         return_tensors="pt"
     ).to(model.device)
-    outputs = model.generate(inputs, max_new_tokens=512, pad_token_id=tokenizer.eos_token_id)
-    output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
+    new_inputs = tokenizer.apply_chat_template(
+        [{"role": "user", "content": new_prompt}],
+        add_generation_prompt=True,
+        return_tensors="pt"
+    ).to(model.device)
+    outputs = model.generate(new_inputs, max_new_tokens=1024, pad_token_id=tokenizer.eos_token_id)
+    output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True).replace(" [/INST]", "")
+    print(output)
     return convert_for_evaluation(output)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
+    parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct", "my_model"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
     args = parser.parse_args()
 
     generated_examples = [None] * 500
@@ -68,12 +74,14 @@ if __name__ == '__main__':
 
     model_name_or_path = args.model
     logger.info("model " + model_name_or_path)
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/deepseek-coder-1.3b-base", trust_remote_code=True)
     logger.info(f"load tokenizer {tokenizer.__class__} from {model_name_or_path} over.")
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
 
     for i, example in enumerate(tqdm(examples, "MBPP", 500, leave=False, unit="example")):
-        generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(example['prompt'], tokenizer, model))
+        prompt = example['prompt']
+        new_prompt = prompt + ">>> Code:\n```python\n"
+        generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(prompt, new_prompt, tokenizer, model))
 
     logger.info("Generate all over!!!")
     write_jsonl("mbpp_samples.jsonl", generated_examples)
