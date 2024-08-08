@@ -113,8 +113,8 @@ if __name__ == '__main__':
     task_id2data = {}
 
     n_cpu = cpu_count()
-    prompt_examples = load_dataset("mbpp", split="prompt", num_proc=n_cpu)  #
-    train_examples = load_dataset("mbpp", split="train", num_proc=n_cpu)  #
+    prompt_examples = load_dataset("mbpp", split="prompt", num_proc=n_cpu)
+    train_examples = load_dataset("mbpp", split="train", num_proc=n_cpu)
 
     for train_example in train_examples:
         task_id = train_example['task_id']
@@ -162,10 +162,11 @@ if __name__ == '__main__':
                     task_id2negatives[task_id].append(sample[-1]['generation'] + '```')
                 else:
                     task_id2negatives[task_id] = [sample[-1]['generation'] + '```']
-            elif task_id in task_id2negatives:
-                task_id2negatives[task_id] += sample
             else:
-                task_id2negatives[task_id] = sample
+                if task_id not in task_id2negatives:
+                    task_id2negatives[task_id] = []
+                for attempt in sample:
+                    task_id2negatives[task_id].append(attempt['generation'])
 
     with open('compiler_dpo_dataset_dict.json', 'w') as f:
         dump(compiler_dpo_dataset_dict, f)

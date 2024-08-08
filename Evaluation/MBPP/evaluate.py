@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from torch.utils.data import Dataset
 from re import search, DOTALL
@@ -57,7 +58,6 @@ def generate_one(prompt: str, new_prompt: str, tokenizer, model) -> str:
     ).to(model.device)
     outputs = model.generate(new_inputs, max_new_tokens=1024, pad_token_id=tokenizer.eos_token_id)
     output = tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True).replace(" [/INST]", "")
-    print(output)
     return convert_for_evaluation(output)
 
 
@@ -84,8 +84,9 @@ if __name__ == '__main__':
         generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(prompt, new_prompt, tokenizer, model))
 
     logger.info("Generate all over!!!")
-    write_jsonl("mbpp_samples.jsonl", generated_examples)
+    root = os.path.realpath(__file__)
+    write_jsonl(root + "mbpp_samples.jsonl", generated_examples)
     logger.info("Save 500 processed examples into mbpp_samples.jsonl over!")
 
-    result = evaluate_functional_correctness("mbpp_samples.jsonl", problem_file="data/mbpp_test.jsonl", is_mbpp=True)
+    result = evaluate_functional_correctness(root + "mbpp_samples.jsonl", problem_file=root + "data/mbpp_test.jsonl", is_mbpp=True)
     print(result, model_name_or_path)
