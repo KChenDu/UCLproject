@@ -6,6 +6,7 @@ from loguru import logger
 from torch import manual_seed
 from os import cpu_count, remove
 from datasets import load_dataset
+from torch import float16
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 from subprocess import run
@@ -181,7 +182,7 @@ if __name__ == '__main__':
     logger.info("model " + model_name_or_path)
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
     logger.info(f"load tokenizer {tokenizer.__class__} from {model_name_or_path} over.")
-    model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True).cuda()
+    model = AutoModelForCausalLM.from_pretrained(model_name_or_path, trust_remote_code=True, torch_dtype=float16).cuda()
 
     for i in range(num_samples_per_task):
         examples = read_train_examples(train_examples, prompt_examples, language)

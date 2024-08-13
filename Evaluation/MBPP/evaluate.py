@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from torch.utils.data import Dataset
 from re import search, DOTALL
@@ -8,6 +7,7 @@ from os import cpu_count
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
+from pathlib import Path
 from human_eval.data import write_jsonl
 from human_eval.evaluation import evaluate_functional_correctness
 
@@ -63,7 +63,7 @@ def generate_one(prompt: str, new_prompt: str, tokenizer, model) -> str:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', choices=["deepseek-ai/deepseek-coder-1.3b-base", "deepseek-ai/deepseek-coder-1.3b-instruct", "my_model"], default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
+    parser.add_argument('--model', default="deepseek-ai/deepseek-coder-1.3b-base", type=str)
     args = parser.parse_args()
 
     generated_examples = [None] * 500
@@ -84,9 +84,9 @@ if __name__ == '__main__':
         generated_examples[i] = dict(task_id=example['task_id'], generation=generate_one(prompt, new_prompt, tokenizer, model))
 
     logger.info("Generate all over!!!")
-    root = os.path.realpath(__file__)
-    write_jsonl(root + "mbpp_samples.jsonl", generated_examples)
+    root = Path(__file__).parent
+    write_jsonl(root / "mbpp_samples.jsonl", generated_examples)
     logger.info("Save 500 processed examples into mbpp_samples.jsonl over!")
 
-    result = evaluate_functional_correctness(root + "mbpp_samples.jsonl", problem_file=root + "data/mbpp_test.jsonl", is_mbpp=True)
+    result = evaluate_functional_correctness(str(root / "mbpp_samples.jsonl"), problem_file=str(root / "data" / "mbpp_test.jsonl"), is_mbpp=True)
     print(result, model_name_or_path)
