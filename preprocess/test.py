@@ -28,9 +28,7 @@ if __name__ == '__main__':
     with open(path, 'r') as file:
         for line in file:
             data = loads(line)
-            if not data['compilable']:
-                data['class'] = 3
-            else:
+            if data['compilable']:
                 task_id = data['task_id']
                 code = data['generation'] + "\n\n" + task_id2test[task_id]['test_setup_code'] + "\n\n"
                 test_list = task_id2test[task_id]['test_list']
@@ -38,9 +36,9 @@ if __name__ == '__main__':
                     for test in test_list:
                         with time_limit(3.), no_stdout():
                             exec(code + test + '\n', {})
-                        data['class'] = 1
+                        data['pass'] = True
                 except BaseException as e:
-                    data['class'] = 2
+                    data['pass'] = False
             labeled_dataset.append(data)
 
-    write_jsonl(str(path.with_suffix('')) + '_labeled.jsonl', labeled_dataset)
+    write_jsonl(str(path.with_suffix('')) + '_tested.jsonl', labeled_dataset)

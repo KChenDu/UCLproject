@@ -32,7 +32,6 @@ if __name__ == '__main__':
             if data['compilable']:
                 if data['attempt'] != 0:
                     not_compilable_dataset.append(data)
-                data.pop('compilable')
                 task_id = data['task_id']
                 code = data['generation'] + "\n\n" + task_id2test[task_id]['test_setup_code'] + "\n\n"
                 test_list = task_id2test[task_id]['test_list']

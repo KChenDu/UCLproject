@@ -37,7 +37,7 @@ Examples are listed as follows:
 {}
 
 Here is my problem:
-{}'''.format('\n\n'.join(examples_str), prompt) + ">>> Code:\n```python\n"
+{}'''.format('\n\n'.join(examples_str), prompt)
     elif language == 'C++':
         codes = ['''#include <vector>
 #include <algorithm>
@@ -96,7 +96,7 @@ Examples are listed as follows:
 {}
 
 Here is my problem:
-{}'''.format('\n\n'.join(examples_str), prompt) + ">>> Code:\n```cpp\n"
+{}'''.format('\n\n'.join(examples_str), prompt)
     return prompt_with_shots
 
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     path = Path(args.path)
     assert path.is_file()
 
-    task_id2positives = {}
+    task_id2positive = {}
     task_id2negatives = {}
     task_id2data = {}
 
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         task_id = train_example['task_id']
         train_example.pop('task_id')
         task_id2data[task_id] = train_example
-        task_id2positives[task_id] = [train_example['code'] + '\n```']
+        task_id2positive[task_id] = train_example['code'].strip()
     del train_examples
 
     task_id2samples = {}
@@ -140,36 +140,12 @@ if __name__ == '__main__':
             else:
                 task_id2samples[task_id][sample].append(data)
 
-    task_id2prompts = {}
+    # task_id2prompts = {}
     compiler_dpo_dataset_dict = {
         "prompt": [],
         "chosen": [],
         "rejected": []
     }
-
-    for task_id, samples in task_id2samples.items():
-        prompt = get_prompt(task_id, task_id2data, prompt_examples, 'Python')
-        task_id2prompts[task_id] = prompt
-        for sample in samples:
-            if sample[-1]['compilable']:
-                for attempt in sample[:-1]:
-                    compiler_dpo_dataset_dict["prompt"].append(prompt)
-                    compiler_dpo_dataset_dict["chosen"].append(sample[-1]['generation'] + "```")
-                    compiler_dpo_dataset_dict["rejected"].append(attempt['generation'])
-                if sample[-1]['pass']:
-                    task_id2positives[task_id].append(sample[-1]['generation'] + '```')
-                elif task_id in task_id2negatives:
-                    task_id2negatives[task_id].append(sample[-1]['generation'] + '```')
-                else:
-                    task_id2negatives[task_id] = [sample[-1]['generation'] + '```']
-            else:
-                if task_id not in task_id2negatives:
-                    task_id2negatives[task_id] = []
-                for attempt in sample:
-                    task_id2negatives[task_id].append(attempt['generation'])
-
-    with open('compiler_dpo_dataset_dict.json', 'w') as f:
-        dump(compiler_dpo_dataset_dict, f)
 
     test_dpo_dataset_dict = {
         "prompt": [],
@@ -177,16 +153,53 @@ if __name__ == '__main__':
         "rejected": []
     }
 
-    for task_id, prompt in task_id2prompts.items():
-        if not (task_id in task_id2positives and task_id in task_id2negatives):
-            continue
-        positives = task_id2positives[task_id]
-        negatives = task_id2negatives[task_id]
-        for positive in positives:
-            for negative in negatives:
-                test_dpo_dataset_dict["prompt"].append(prompt)
-                test_dpo_dataset_dict["chosen"].append(positive)
-                test_dpo_dataset_dict["rejected"].append(negative)
+    for task_id, samples in task_id2samples.items():
+        prompt = get_prompt(task_id, task_id2data, prompt_examples, 'Python')
+        # task_id2prompts[task_id] = prompt
+        for sample in samples:
+            if sample[-1]['compilable']:
+                for attempt in sample[:-1]:
+                    compiler_dpo_dataset_dict["prompt"].append(prompt)
+                    compiler_dpo_dataset_dict["chosen"].append('```python\n' + sample[-1]['generation'].strip() + '\n```')
+                    if attempt['generation'].strip().startswith('```python'):
+                        compiler_dpo_dataset_dict["rejected"].append(attempt['generation'].strip())
+                    else:
+                        compiler_dpo_dataset_dict["rejected"].append('```python\n' + attempt['generation'].strip() + '\n```')
+                if not sample[-1]['pass']:
+                    test_dpo_dataset_dict["prompt"].append(prompt)
+                    test_dpo_dataset_dict["chosen"].append('```python\n' + task_id2positive[task_id].strip() + '\n```')
+                    if sample[-1]['generation'].strip().startswith('```python'):
+                        test_dpo_dataset_dict["rejected"].append(sample[-1]['generation'].strip())
+                    else:
+                        test_dpo_dataset_dict["rejected"].append('```python\n' + sample[-1]['generation'].strip() + '\n```')
+            else:
+                for attempt in sample:
+                    compiler_dpo_dataset_dict["prompt"].append(prompt)
+                    compiler_dpo_dataset_dict["chosen"].append('```python\n' + task_id2positive[task_id].strip() + '\n```')
+                    if attempt['generation'].strip().startswith('```python'):
+                        compiler_dpo_dataset_dict["rejected"].append(attempt['generation'].strip())
+                    else:
+                        compiler_dpo_dataset_dict["rejected"].append('```python\n' + attempt['generation'].strip() + '\n```')
+
+    with open('compiler_dpo_dataset_dict.json', 'w') as f:
+        dump(compiler_dpo_dataset_dict, f)
+
+    # test_dpo_dataset_dict = {
+    #     "prompt": [],
+    #     "chosen": [],
+    #     "rejected": []
+    # }
+
+    # for task_id, prompt in task_id2prompts.items():
+    #     if not (task_id in task_id2positives and task_id in task_id2negatives):
+    #         continue
+    #     positives = task_id2positives[task_id]
+    #     negatives = task_id2negatives[task_id]
+    #     for positive in positives:
+    #         for negative in negatives:
+    #             test_dpo_dataset_dict["prompt"].append(prompt)
+    #             test_dpo_dataset_dict["chosen"].append(positive)
+    #             test_dpo_dataset_dict["rejected"].append(negative)
 
     with open('test_dpo_dataset_dict.json', 'w') as f:
         dump(test_dpo_dataset_dict, f)
